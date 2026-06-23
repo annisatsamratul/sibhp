@@ -200,73 +200,73 @@
 				if(target) target.classList.remove('hidden');
 			}
 
-			async function loadDashboardData() {
-			    console.log("Mencoba mengambil data dari Supabase...");
-			    
-			    const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-			    
-			    if (errBarang) {
-			        console.error("Error Database:", errBarang);
-			        return;
-			    }
-			
-			    console.log("Data barang ditemukan:", barang);
-			    
-			    // Pastikan ID elemen 'table-dashboard-stok' sudah sesuai dengan yang ada di HTML Anda
-			    const tbody = document.getElementById('table-dashboard-stok');
-			    if (tbody) {
-			        tbody.innerHTML = barang.map(b => `
-			            <tr class="border-b hover:bg-gray-50">
-			                <td class="p-2">${b.id}</td> <td class="p-2 font-medium">${b.nama_barang}</td>
-			                <td class="p-2">${b.minimum_stok}</td>
-			                <td class="p-2">${b.satuan}</td>
-			                <td class="p-2">${b.stok_sekarang}</td>
-			            </tr>
-			        `).join('');
-			    } else {
-			        console.error("Elemen table-dashboard-stok tidak ditemukan di HTML!");
-			    }
-			}
-
 			// async function loadDashboardData() {
-			// 	console.log("Mencoba mengambil data dari Supabase..."); // Tambahkan ini
-    
-			// 	const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-			// 	const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
+			//     console.log("Mencoba mengambil data dari Supabase...");
+			    
+			//     const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
+			    
+			//     if (errBarang) {
+			//         console.error("Error Database:", errBarang);
+			//         return;
+			//     }
 			
-			// 	if (errBarang || errPermintaan) {
-			// 		console.error("Error Database:", errBarang || errPermintaan); // Lihat error di Console
-			// 		return;
-			// 	}
+			//     console.log("Data barang ditemukan:", barang);
+			    
+			//     // Pastikan ID elemen 'table-dashboard-stok' sudah sesuai dengan yang ada di HTML Anda
+			//     const tbody = document.getElementById('table-dashboard-stok');
+			//     if (tbody) {
+			//         tbody.innerHTML = barang.map(b => `
+			//             <tr class="border-b hover:bg-gray-50">
+			//                 <td class="p-2">${b.id}</td> <td class="p-2 font-medium">${b.nama_barang}</td>
+			//                 <td class="p-2">${b.minimum_stok}</td>
+			//                 <td class="p-2">${b.satuan}</td>
+			//                 <td class="p-2">${b.stok_sekarang}</td>
+			//             </tr>
+			//         `).join('');
+			//     } else {
+			//         console.error("Elemen table-dashboard-stok tidak ditemukan di HTML!");
+			//     }
+			// }
 
-   // 				console.log("Data barang ditemukan:", barang); // Lihat data di Console
-   //              // // Ambil data barang
-   //              // const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-   //              // // Ambil data permintaan pending
-   //              // const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
+			async function loadDashboardData() {
+				console.log("Mencoba mengambil data dari Supabase..."); // Tambahkan ini
+    
+				const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
+				const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
+			
+				if (errBarang || errPermintaan) {
+					console.error("Error Database:", errBarang || errPermintaan); // Lihat error di Console
+					return;
+				}
 
-   //              if (!errBarang && !errPermintaan) {
-   //                  // Update Statistik
-   //                  document.getElementById('stat-total-barang').innerText = barang.length;
-   //                  document.getElementById('stat-pending-permintaan').innerText = permintaan.length;
+   				console.log("Data barang ditemukan:", barang); // Lihat data di Console
+                // // Ambil data barang
+                // const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
+                // // Ambil data permintaan pending
+                // const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
+
+                if (!errBarang && !errPermintaan) {
+                    // Update Statistik
+                    document.getElementById('stat-total-barang').innerText = barang.length;
+                    document.getElementById('stat-pending-permintaan').innerText = permintaan.length;
                     
-   //                  // Hitung barang kritis (stok < minimum_stok)
-   //                  const kritis = barang.filter(b => b.stok_sekarang < b.minimum_stok);
-   //                  document.getElementById('stat-kritis-barang').innerText = kritis.length;
+                    // Hitung barang kritis (stok < minimum_stok)
+                    const kritis = barang.filter(b => b.stok_sekarang < b.minimum_stok);
+                    document.getElementById('stat-kritis-barang').innerText = kritis.length;
 
-   //                  // Render Tabel Dashboard
-   //                  const tbody = document.getElementById('table-dashboard-stok');
-   //                  tbody.innerHTML = barang.map(b => `
-   //                      <tr class="border-b hover:bg-gray-50">
-   //                          <td class="p-2"><img src="${b.gambar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 object-cover rounded"></td>
-   //                          <td class="p-2 font-medium">${b.nama_barang}</td>
-   //                          <td class="p-2">${b.minimum_stok}</td>
-   //                          <td class="p-2">${b.satuan}</td>
-   //                          <td class="p-2 ${b.stok_sekarang <= b.minimum_stok ? 'text-red-600 font-bold' : ''}">${b.stok_sekarang}</td>
-   //                      </tr>
-   //                  `).join('');
-   //              }
-   //          }
+                    // Render Tabel Dashboard
+                    const tbody = document.getElementById('table-dashboard-stok');
+                    tbody.innerHTML = barang.map(b => `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2"><img src="${b.gambar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 object-cover rounded"></td>
+                            <td class="p-2 font-medium">${b.nama_barang}</td>
+                            <td class="p-2">${b.minimum_stok}</td>
+                            <td class="p-2">${b.satuan}</td>
+                            <td class="p-2 ${b.stok_sekarang <= b.minimum_stok ? 'text-red-600 font-bold' : ''}">${b.stok_sekarang}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
 			
 			// 3. LOGIKA FORM PERMINTAAN & AUTOMATED WHATSAPP LINK GENERATION
 			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
