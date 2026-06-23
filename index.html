@@ -201,13 +201,11 @@
 			}
 			// 3. LOGIKA FORM PERMINTAAN & AUTOMATED WHATSAPP LINK GENERATION
 			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
-				const pesan = 'Halo Pramubakti KPU, terdapat Permintaan BHP baru yang sudah
-								DISETUJUI oleh Operator.\n\n' +
+				const pesan = 'Halo Pramubakti KPU, terdapat Permintaan BHP baru yang sudah DISETUJUI oleh Operator.\n\n' +
 								'*Pemohon:* ${namaPemohon}\n' +
 								'*Subbagian:* ${subbagian}\n' +
 								'*Item Barang:*\n${itemsText}\n\n' +
-								'Mohon segera distribusikan logistik tersebut dan klik tombol
-								'SELESAI' di aplikasi untuk memotong stok sistem. Terima kasih.';
+								'Mohon segera distribusikan logistik tersebut dan klik tombol SELESAI di aplikasi untuk memotong stok sistem. Terima kasih.';
 
 				return 'https://api.whatsapp.com/send?phone=${noWaPramubakti}&text=${encodeURIComponent(pesan)}';
 			}
