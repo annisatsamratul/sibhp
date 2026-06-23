@@ -165,7 +165,7 @@
 					currentUser = data;
 					document.getElementById('login-page').classList.add('hidden');
 					document.getElementById('main-system').classList.remove('hidden');
-					document.getElementById('header-info').innerText = "Login Sebagai: ${data.nama_lengkap} (${data.role.toUpperCase()})';
+					document.getElementById('user-display').innerText = "Login Sebagai: ${data.nama_lengkap} (${data.role.toUpperCase()})';
 					applyRolePermissions(data.role);
 					switchTab('dashboard');
 					loadDashboardData();
