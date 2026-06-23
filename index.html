@@ -174,24 +174,34 @@
 					}
 			}
 
-			async function loadDataBarang() {
-	            const { data } = await supabase.from('barang').select('*');
-	            const tbody = document.getElementById('table-barang');
-	            tbody.innerHTML = data.map(b => `<tr><td class="p-2 border">${b.nama_barang}</td><td class="p-2 border">${b.stok_sekarang}</td></tr>`).join('');
-	        }
+			async function loadDashboardData() {
+                // Ambil data barang
+                const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
+                // Ambil data permintaan pending
+                const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
 
-	        async function tambahBarang() {
-	            const nama = document.getElementById('nama-barang').value;
-	            const stok = document.getElementById('stok-barang').value;
-	            await supabase.from('barang').insert([{ nama_barang: nama, stok_sekarang: stok, satuan: 'pcs' }]);
-	            alert('Berhasil!');
-	            loadDataBarang();
-	        }
+                if (!errBarang && !errPermintaan) {
+                    // Update Statistik
+                    document.getElementById('stat-total-barang').innerText = barang.length;
+                    document.getElementById('stat-pending-permintaan').innerText = permintaan.length;
+                    
+                    // Hitung barang kritis (stok < minimum_stok)
+                    const kritis = barang.filter(b => b.stok_sekarang < b.minimum_stok);
+                    document.getElementById('stat-kritis-barang').innerText = kritis.length;
 
-	        function showMenu(id) {
-	            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
-	            document.getElementById(id).classList.remove('hidden');
-	        }
+                    // Render Tabel Dashboard
+                    const tbody = document.getElementById('table-dashboard-stok');
+                    tbody.innerHTML = barang.map(b => `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2"><img src="${b.gambar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 object-cover rounded"></td>
+                            <td class="p-2 font-medium">${b.nama_barang}</td>
+                            <td class="p-2">${b.minimum_stok}</td>
+                            <td class="p-2">${b.satuan}</td>
+                            <td class="p-2 ${b.stok_sekarang <= b.minimum_stok ? 'text-red-600 font-bold' : ''}">${b.stok_sekarang}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
 			
 			function applyRolePermissions(role) {
 				// Sembunyikan semua menu proteksi terlebih dahulu
