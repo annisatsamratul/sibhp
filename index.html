@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 	<html lang="id">
 	<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Sistem Inventaris BHP KPU</title>
-	<!-- Tailwind CSS CDN -->
-	<script src="https://cdn.tailwindcss.com"></script>
-	<!-- Supabase JS Library -->
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Sistem Inventaris BHP KPU</title>
+		<!-- Tailwind CSS CDN -->
+		<script src="https://cdn.tailwindcss.com"></script>
+		<!-- Supabase JS Library -->
+		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	</head>
 <body class="bg-gray-50 text-gray-800 font-sans">
 	<!-- KONTEN UTAMA APLIKASI (DIBUNGKUS NEGATIVE MARGIN UNTUK PRINTING BIAR RAPI) -->
 		<div id="app" class="min-h-screen">
@@ -201,6 +201,17 @@
 			}
 
 			async function loadDashboardData() {
+				console.log("Mencoba mengambil data dari Supabase..."); // Tambahkan ini
+    
+				const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
+				const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
+			
+				if (errBarang || errPermintaan) {
+					console.error("Error Database:", errBarang || errPermintaan); // Lihat error di Console
+					return;
+				}
+
+    console.log("Data barang ditemukan:", barang); // Lihat data di Console
                 // Ambil data barang
                 const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
                 // Ambil data permintaan pending
