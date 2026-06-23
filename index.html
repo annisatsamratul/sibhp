@@ -137,6 +137,37 @@
 						
 						<!-- VIEW BARANG MASUK & MODUL LAINNYA DIINTEGRASIKAN SECARA IDENTIK -->
 						<!-- ... Kode elemen form barang masuk, stock opname, master data, dan sysadmin ... -->
+						<!-- VIEW: BARANG MASUK -->
+						<section id="tab-barang-masuk" class="tab-content hidden">
+					        <h2 class="text-xl font-bold mb-4 text-blue-900">Form Input Barang Masuk</h2>
+					        <div class="bg-white p-6 rounded shadow">
+					            <p class="text-gray-500">Konten Manajemen Barang Masuk Sedang Dalam Pengembangan...</p>
+					        </div>
+					    </section>
+
+						<!-- VIEW: STOCK OPNAME -->
+					    <section id="tab-stock-opname" class="tab-content hidden">
+					        <h2 class="text-xl font-bold mb-4 text-blue-900">Stock Opname & Penyesuaian</h2>
+					        <div class="bg-white p-6 rounded shadow">
+					            <p class="text-gray-500">Konten Fitur Stock Opname Sedang Dalam Pengembangan...</p>
+					        </div>
+					    </section>
+
+						<!-- VIEW: MASTER BARANG -->
+					    <section id="tab-master-barang" class="tab-content hidden">
+					        <h2 class="text-xl font-bold mb-4 text-blue-900">Master Data Barang Habis Pakai</h2>
+					        <div class="bg-white p-6 rounded shadow">
+					            <p class="text-gray-500">Konten Master Data Barang Sedang Dalam Pengembangan...</p>
+					        </div>
+					    </section>
+
+						<!-- VIEW: MANAJEMEN AKUN -->
+					    <section id="tab-sysadmin" class="tab-content hidden">
+					        <h2 class="text-xl font-bold mb-4 text-blue-900">Manajemen Akun Pengguna</h2>
+					        <div class="bg-white p-6 rounded shadow">
+					            <p class="text-gray-500">Konten Konfigurasi Pengguna Sedang Dalam Pengembangan...</p>
+					        </div>
+					    </section>
 
 					</main>
 				</div>
@@ -194,18 +225,45 @@
 			}
 			
 			function switchTab(tabId) {
-				document.querySelectorAll('.tab-content').forEach(el => {
-					el.classList.add('hidden')
-				});
+				// 1. Sembunyikan semua konten halaman
+			    document.querySelectorAll('.tab-content').forEach(el => {
+			        el.classList.add('hidden');
+			    });
+			    
+			    // 2. Tampilkan halaman yang dipilih jika elemennya ada
+			    const target = document.getElementById(`tab-${tabId}`); 
+			    if (target) {
+			        target.classList.remove('hidden');
+			    } else {
+			        console.log(`Tab untuk "${tabId}" belum dibuat di HTML.`);
+			    }
+			
+			    // 3. FITUR BARU: Mengubah warna menu aktif di sidebar
+			    // Hapus warna aktif (bg-blue-600) dari semua tombol di dalam sidebar terlebih dahulu
+			    document.querySelectorAll('aside button').forEach(btn => {
+			        btn.classList.remove('bg-blue-600', 'text-white', 'font-bold');
+			        btn.classList.add('text-slate-300', 'hover:bg-slate-700'); // Kembali ke warna dasar
+			    });
+			
+			    // Cari tombol yang memicu fungsi switchTab dengan parameter tabId saat ini
+			    // Contoh: mencari button dengan onclick="switchTab('dashboard')"
+			    const activeBtn = document.querySelector(`aside button[onclick*="'${tabId}'"]`);
+			    if (activeBtn) {
+			        activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700');
+			        activeBtn.classList.add('bg-blue-600', 'text-white', 'font-bold'); // Beri warna biru terang saat aktif
+			}
+				// document.querySelectorAll('.tab-content').forEach(el => {
+				// 	el.classList.add('hidden')
+				// });
 				
-				const target = document.getElementById(`tab-${tabId}`);
+				// const target = document.getElementById(`tab-${tabId}`);
 				
-				if(target) {
-					target.classList.remove('hidden');
-					// console.log(`Tab ${tabId} dibuka`);
-				} else{
-					console.error(`Error: Elemen dengan id="tab-${tabId}" tidak ditemukan di HTML!`);
-				}
+				// if(target) {
+				// 	target.classList.remove('hidden');
+				// 	// console.log(`Tab ${tabId} dibuka`);
+				// } else{
+				// 	console.error(`Error: Elemen dengan id="tab-${tabId}" tidak ditemukan di HTML!`);
+				// }
 			}
 
 			async function loadDashboardData() {
