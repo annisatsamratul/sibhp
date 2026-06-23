@@ -218,8 +218,7 @@
 				const { data, error } = await _supabase.from('permintaan').update({ status:'diproses' }).eq('id', permintaanId).select();
 
 				if(!error) {
-					alert('Permintaan Berhasil Disetujui! Link WhatsApp Notifikasi otomatis akan
-					terbuka.');
+					alert('Permintaan Berhasil Disetujui! Link WhatsApp Notifikasi otomatis akan terbuka.');
 					// Ambil detail item untuk pembuatan string teks WA
 					const itemsText = "- 5 Buah Buku Saku KPU\n- 2 Rim Kertas A4 HVS"; // String hasil loop detail_permintaan
 					const linkWa = generateWhatsAppLink('Budi Utomo', 'Teknis Penyelenggaraan', itemsText, '628123456789');
