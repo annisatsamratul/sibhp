@@ -194,10 +194,16 @@
 			}
 			
 			function switchTab(tabId) {
-				document.querySelectorAll('.tab-content').forEach(el =>
-				el.classList.add('hidden'));
+				document.querySelectorAll('.tab-content').forEach(el => {
+					el.classList.add('hidden')
+				});
 				const target = document.getElementById('tab-${tabId}');
-				if(target) target.classList.remove('hidden');
+				if(target) {
+					target.classList.remove('hidden');
+					console.log(`Tab ${tabId} dibuka`);
+				} else{
+					console.error(`Tab tab-${tabId} tidak ditemukan`);
+				}
 			}
 
 			async function loadDashboardData() {
