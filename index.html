@@ -173,6 +173,25 @@
 					alert('Kegagalan Autentikasi! Username atau Password Salah.');
 					}
 			}
+
+			async function loadDataBarang() {
+	            const { data } = await supabase.from('barang').select('*');
+	            const tbody = document.getElementById('table-barang');
+	            tbody.innerHTML = data.map(b => `<tr><td class="p-2 border">${b.nama_barang}</td><td class="p-2 border">${b.stok_sekarang}</td></tr>`).join('');
+	        }
+
+	        async function tambahBarang() {
+	            const nama = document.getElementById('nama-barang').value;
+	            const stok = document.getElementById('stok-barang').value;
+	            await supabase.from('barang').insert([{ nama_barang: nama, stok_sekarang: stok, satuan: 'pcs' }]);
+	            alert('Berhasil!');
+	            loadDataBarang();
+	        }
+
+	        function showMenu(id) {
+	            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
+	            document.getElementById(id).classList.remove('hidden');
+	        }
 			
 			function applyRolePermissions(role) {
 				// Sembunyikan semua menu proteksi terlebih dahulu
