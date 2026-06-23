@@ -211,11 +211,11 @@
 					return;
 				}
 
-    console.log("Data barang ditemukan:", barang); // Lihat data di Console
-                // Ambil data barang
-                const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-                // Ambil data permintaan pending
-                const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
+   				console.log("Data barang ditemukan:", barang); // Lihat data di Console
+                // // Ambil data barang
+                // const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
+                // // Ambil data permintaan pending
+                // const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
 
                 if (!errBarang && !errPermintaan) {
                     // Update Statistik
