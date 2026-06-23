@@ -173,6 +173,32 @@
 					alert('Kegagalan Autentikasi! Username atau Password Salah.');
 					}
 			}
+			
+			function applyRolePermissions(role) {
+				// Sembunyikan semua menu proteksi terlebih dahulu
+				document.getElementById('menu-barang-masuk').classList.add('hidden');
+				document.getElementById('menu-stock-opname').classList.add('hidden');
+				document.getElementById('menu-master-barang').classList.add('hidden');
+				document.getElementById('menu-sysadmin').classList.add('hidden');
+				
+				if (role === 'operator') {
+					document.getElementById('menu-barang-masuk').classList.remove('hidden');
+					document.getElementById('menu-stock-opname').classList.remove('hidden');
+					document.getElementById('menu-master-barang').classList.remove('hidden');
+					document.getElementById('menu-sysadmin').classList.remove('hidden');
+				} else if (role === 'pramubakti') {
+					document.getElementById('menu-barang-masuk').classList.remove('hidden');
+					document.getElementById('menu-stock-opname').classList.remove('hidden');
+					document.getElementById('menu-master-barang').classList.remove('hidden');
+				}
+			}
+			
+			function switchTab(tabId) {
+				document.querySelectorAll('.tab-content').forEach(el =>
+				el.classList.add('hidden'));
+				const target = document.getElementById('tab-${tabId}');
+				if(target) target.classList.remove('hidden');
+			}
 
 			async function loadDashboardData() {
                 // Ambil data barang
@@ -203,31 +229,6 @@
                 }
             }
 			
-			function applyRolePermissions(role) {
-				// Sembunyikan semua menu proteksi terlebih dahulu
-				document.getElementById('menu-barang-masuk').classList.add('hidden');
-				document.getElementById('menu-stock-opname').classList.add('hidden');
-				document.getElementById('menu-master-barang').classList.add('hidden');
-				document.getElementById('menu-sysadmin').classList.add('hidden');
-				
-				if (role === 'operator') {
-					document.getElementById('menu-barang-masuk').classList.remove('hidden');
-					document.getElementById('menu-stock-opname').classList.remove('hidden');
-					document.getElementById('menu-master-barang').classList.remove('hidden');
-					document.getElementById('menu-sysadmin').classList.remove('hidden');
-				} else if (role === 'pramubakti') {
-					document.getElementById('menu-barang-masuk').classList.remove('hidden');
-					document.getElementById('menu-stock-opname').classList.remove('hidden');
-					document.getElementById('menu-master-barang').classList.remove('hidden');
-				}
-			}
-			
-			function switchTab(tabId) {
-				document.querySelectorAll('.tab-content').forEach(el =>
-				el.classList.add('hidden'));
-				const target = document.getElementById('tab-${tabId}');
-				if(target) target.classList.remove('hidden');
-			}
 			// 3. LOGIKA FORM PERMINTAAN & AUTOMATED WHATSAPP LINK GENERATION
 			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
 				const pesan = `Halo Pramubakti KPU, terdapat Permintaan BHP baru yang sudah DISETUJUI oleh Operator.\n\n` +
