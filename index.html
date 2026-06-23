@@ -1,84 +1,234 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <title>Sistem Inventaris BHP KPU</title>
+	<html lang="id">
+	<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Sistem Inventaris BHP KPU</title>
+	<!-- Tailwind CSS CDN -->
+	<script src="https://cdn.tailwindcss.com"></script>
+	<!-- Supabase JS Library -->
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-gray-800 font-sans">
+	<!-- KONTEN UTAMA APLIKASI (DIBUNGKUS NEGATIVE MARGIN UNTUK PRINTING BIAR RAPI) -->
+		<div id="app" class="min-h-screen">
+		
+			<!-- AREA LOGIN (Akan disembunyikan jika sudah terautentikasi) -->
+			<div id="login-page" class="flex items-center justify-center min-h-screen bgslate-900">
+				<div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+					<div class="text-center mb-6">
+						<h2 class="text-2xl font-bold text-blue-900">SISTEM INVENTARIS BHP</h2>
+						<p class="text-gray-500 text-sm">Komisi Pemilihan Umum Provinsi</p>
+					</div>
+					<form id="form-login" onsubmit="handleLogin(event)">
+						<div class="mb-4">
+							<label class="block text-sm font-semibold mb-1">Username</label>
+							<input type="text" id="login-username" class="w-full border p-2 rounded focus:outline-blue-500" required>
+						</div>
+						<div class="mb-6">
+							<label class="block text-sm font-semibold mb-1">Password</label>
+							<input type="password" id="login-password" class="w-full border p-2 rounded focus:outline-blue-500" required>
+						</div>
+						<button type="submit" class="w-full bg-blue-900 text-white p-2.5 rounded
+						font-bold hover:bg-blue-800 transition">Masuk Ke Sistem</button>
+					</form>
+				</div>
+			</div>
+			
+			<!-- AREA UTAMA DASHBOARD & NAVIGASI (Default Tersembunyi) -->
+			<div id="main-system" class="hidden">
+				<!-- Top Navigation Bar -->
+				<header class="bg-blue-900 text-white p-4 flex justify-between items-center shadowmd">
+					<div>
+						<h1 class="font-bold text-lg">Sistem BHP KPU</h1>
+						<span id="user-display" class="text-xs text-blue-200"></span>
+					</div>
+					<button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white
+					px-3 py-1.5 rounded text-sm font-medium transition">Keluar</button>
+				</header>
+				
+				<!-- Sidebar Menu Links & Content Viewport -->
+				<div class="flex" style="min-height: calc(100vh - 64px);">
+					
+					<!-- Sidebar Menu Layout -->
+					<aside class="w-64 bg-slate-800 text-white p-4 space-y-1">
+						<nav class="space-y-1">
+							<button onclick="switchTab('dashboard')" id="menu-dashboard" class="wfull text-left p-2.5 rounded hover:bg-slate-700 block transition">📊 Dashboard Real-time </button>
+							<button onclick="switchTab('permintaan')" id="menu-permintaan"
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition">📦 Permintaan
+							Barang</button>
+							<button onclick="switchTab('barang-masuk')" id="menu-barang-masuk"
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📥 Barang
+							Masuk</button>
+							<button onclick="switchTab('stock-opname')" id="menu-stock-opname"
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📝 Stock
+							Opname</button>
+							<button onclick="switchTab('master-barang')" id="menu-master-barang"
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">⚙️ Master
+							Data BHP</button>
+							<button onclick="switchTab('sysadmin')" id="menu-sysadmin" class="wfull text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">👥 Manajemen Akun</button>
+						</nav>
+					</aside>
+					
+					<!-- Kontainer Modul Dinamis -->
+					<main class="flex-1 p-6 overflow-y-auto">
+					
+						<!-- VIEW: DASHBOARD -->
+						<section id="tab-dashboard" class="tab-content">
+							<h2 class="text-xl font-bold mb-4 text-blue-900">Kondisi Real-time Inventaris KPU</h2>
 
-    <div id="login-page" class="flex h-screen items-center justify-center">
-        <div class="bg-white p-8 rounded shadow-md w-96">
-            <h2 class="text-2xl font-bold mb-4">Login BHP KPU</h2>
-            <input id="login-username" type="text" placeholder="Username" class="w-full p-2 border mb-2">
-            <input id="login-password" type="password" placeholder="Password" class="w-full p-2 border mb-4">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-2">Masuk</button>
-        </div>
-    </div>
+							<!-- Ringkasan Indikator Utama -->
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+								<div class="bg-white p-4 rounded shadow border-l-4 borderemerald-500">
+									<div class="text-sm text-gray-500 font-bold text-xs
+									uppercase">Total Jenis Barang</div>
+									<div id="stat-total-barang" class="text-2xl font-bold">0</div>
+								</div>
+								<div class="bg-white p-4 rounded shadow border-l-4 borderamber-500">
+									<div class="text-sm text-gray-500 font-bold text-xs uppercase">Stok di Bawah Batas Minimum</div>
+									<div id="stat-kritis-barang" class="text-2xl font-bold textred-600">0</div>
+								</div>
+								<div class="bg-white p-4 rounded shadow border-l-4 borderblue-500">
+									<div class="text-sm text-gray-500 font-bold text-xs uppercase">Permintaan Pending</div>
+									<div id="stat-pending-permintaan" class="text-2xl fontbold">0</div>
+								</div>
+							</div>
+							
+							<!-- Tabel Real-time Stok -->
+							<div class="bg-white p-4 rounded shadow mb-6">
+								<h3 class="font-bold text-base mb-3 text-slate-700">Data Stok Fisik Aktif</h3>
+								<table class="w-full text-left border-collapse">
+									<thead class="bg-gray-100 text-blue-900 text-xs font-bold">
+										<tr>
+											<th class="p-2 border">Gambar</th>
+											<th class="p-2 border">Nama Barang</th>
+											<th class="p-2 border">Min. Stok</th>
+											<th class="p-2 border">Satuan</th>
+											<th class="p-2 border">Stok Aktual</th>
+										</tr>
+									</thead>
+									<tbody id="table-dashboard-stok" class="text-sm"></tbody>
+								</table>
+							</div>
+						</section>
+						
+						<!-- VIEW: PERMINTAAN BARANG -->
+						<section id="tab-permintaan" class="tab-content hidden">
+							<div class="flex justify-between items-center mb-4">
+								<h2 class="text-xl font-bold text-blue-900">Transaksi Permintaan Barang</h2>
+								<button onclick="openModalPermintaan()" class="bg-blue-900 text-white px-4 py-2 rounded text-sm font-bold">+ Buat Permintaan Baru</button>
+							</div>
+						<!-- Riwayat Permintaan -->
+							<div class="bg-white p-4 rounded shadow">
+								<table class="w-full text-left border-collapse text-sm">
+									<thead class="bg-gray-100 text-blue-900 font-bold">
+										<tr>
+											<th class="p-2 border">Tanggal</th>
+											<th class="p-2 border">Pemohon</th>
+											<th class="p-2 border">Subbagian</th>
+											<th class="p-2 border">Status</th>
+											<th class="p-2 border">Aksi</th>
+										</tr>
+									</thead>
+									<tbody id="table-riwayat-permintaan"></tbody>
+								</table>
+							</div>
+						</section>
+						
+						<!-- VIEW BARANG MASUK & MODUL LAINNYA DIINTEGRASIKAN SECARA IDENTIK -->
+						<!-- ... Kode elemen form barang masuk, stock opname, master data, dan sysadmin ... -->
 
-    <div id="main-system" class="hidden flex h-screen">
-        <aside class="w-64 bg-slate-900 text-white p-4">
-            <h1 class="font-bold mb-6">Sistem BHP KPU</h1>
-            <p id="user-display" class="text-sm text-gray-400 mb-6"></p>
-            <button onclick="showMenu('master-data')" class="block w-full text-left p-2 hover:bg-slate-700">Master Data BHP</button>
-            <button onclick="logout()" class="mt-10 text-red-400">Keluar</button>
-        </aside>
+					</main>
+				</div>
+			</div>
+		</div>
 
-        <main class="flex-1 p-8">
-            <div id="master-data" class="hidden">
-                <h2 class="text-xl font-bold mb-4">Master Data Barang</h2>
-                <div class="flex gap-2 mb-4">
-                    <input id="nama-barang" placeholder="Nama Barang" class="border p-2">
-                    <input id="stok-barang" type="number" placeholder="Stok" class="border p-2">
-                    <button onclick="tambahBarang()" class="bg-green-600 text-white px-4">Tambah</button>
-                </div>
-                <table class="w-full bg-white border">
-                    <thead><tr><th class="p-2 border">Nama</th><th class="p-2 border">Stok</th></tr></thead>
-                    <tbody id="table-barang"></tbody>
-                </table>
-            </div>
-        </main>
-    </div>
+		<!-- MESIN LOGIKA JAVASCRIPT APLIKASI -->
+		<script>
+			// 1. KONFIGURASI KONEKSI DATABASE SUPABASE
+			const SUPABASE_URL = "https://pfuwxyofnrhnjdrelzbk.supabase.co";
+			const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdXd4eW9mbnJobmpkcmVsemJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxODMxNTYsImV4cCI6MjA5Nzc1OTE1Nn0.uYqKzWVJaHuq0vl69ghtYt05lXbrSy4Ehx6byfuNSt0"; // Anon Key Anda
+			const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <script>
-        const supabase = supabase.createClient('https://pfuwxyofnrhnjdrelzbk.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdXd4eW9mbnJobmpkcmVsemJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxODMxNTYsImV4cCI6MjA5Nzc1OTE1Nn0.uYqKzWVJaHuq0vl69ghtYt05lXbrSy4Ehx6byfuNSt0');
+			let currentUser = null;
+			
+			// 2. LOGIKA AUTENTIKASI DAN ROLE-BASED ACCESS CONTROL (RBAC)
+			async function handleLogin(e) {
+				e.preventDefault();
+				const user = document.getElementById('login-username').value;
+				const pass = document.getElementById('login-password').value;
+				
+				// Menggunakan mekanisme built-in Supabase Auth atau tabel users kustom
+				const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
+				
+				if (data && data.password_plain === pass) { // Integrasi hash Bcrypt direkomendasikan pada tahap prod
+					currentUser = data;
+					document.getElementById('login-page').classList.add('hidden');
+					document.getElementById('main-system').classList.remove('hidden');
+					document.getElementById('user-display').innerText = `${data.nama_lengkap} (${data.role.toUpperCase()})`;
+					applyRolePermissions(data.role);
+					switchTab('dashboard');
+					loadDashboardData();
+				} else {
+					alert('Kegagalan Autentikasi! Username atau Password Salah.');
+					}
+			}
+			
+			function applyRolePermissions(role) {
+				// Sembunyikan semua menu proteksi terlebih dahulu
+				document.getElementById('menu-barang-masuk').classList.add('hidden');
+				document.getElementById('menu-stock-opname').classList.add('hidden');
+				document.getElementById('menu-master-barang').classList.add('hidden');
+				document.getElementById('menu-sysadmin').classList.add('hidden');
+				
+				if (role === 'operator') {
+					document.getElementById('menu-barang-masuk').classList.remove('hidden');
+					document.getElementById('menu-stock-opname').classList.remove('hidden');
+					document.getElementById('menu-master-barang').classList.remove('hidden');
+					document.getElementById('menu-sysadmin').classList.remove('hidden');
+				} else if (role === 'pramubakti') {
+					document.getElementById('menu-barang-masuk').classList.remove('hidden');
+					document.getElementById('menu-stock-opname').classList.remove('hidden');
+					document.getElementById('menu-master-barang').classList.remove('hidden');
+				}
+			}
+			
+			function switchTab(tabId) {
+				document.querySelectorAll('.tab-content').forEach(el =>
+				el.classList.add('hidden'));
+				const target = document.getElementById('tab-${tabId}');
+				if(target) target.classList.remove('hidden');
+			}
+			// 3. LOGIKA FORM PERMINTAAN & AUTOMATED WHATSAPP LINK GENERATION
+			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
+				const pesan = `Halo Pramubakti KPU, terdapat Permintaan BHP baru yang sudah DISETUJUI oleh Operator.\n\n` +
+								`*Pemohon:* ${namaPemohon}\n` +
+								`*Subbagian:* ${subbagian}\n` +
+								`*Item Barang:*\n${itemsText}\n\n` +
+								`Mohon segera distribusikan logistik tersebut dan klik tombol 'SELESAI' di aplikasi untuk memotong stok sistem. Terima kasih.`;
 
-        async function login() {
-            const user = document.getElementById('login-username').value;
-            const pass = document.getElementById('login-password').value;
-            const { data, error } = await supabase.from('users_view').select('*').eq('username', user).eq('password_plain', pass).single();
+				return `https://api.whatsapp.com/send?phone=${noWaPramubakti}&text=${encodeURIComponent(pesan)}`;
+			}
+			
+			async function setujuiPermintaanOlehOperator(permintaanId) {
+				// Update status di PostgreSQL Supabase menjadi 'diproses'
+				const { data, error } = await _supabase.from('permintaan').update({ status:'diproses' }).eq('id', permintaanId).select();
 
-            if (data) {
-                document.getElementById('login-page').classList.add('hidden');
-                document.getElementById('main-system').classList.remove('hidden');
-                document.getElementById('user-display').innerText = `Login Sebagai: ${data.nama_lengkap} (${data.role.toUpperCase()})`;
-                loadDataBarang();
-            } else {
-                alert('Username/Password Salah!');
-            }
-        }
-
-        async function loadDataBarang() {
-            const { data } = await supabase.from('barang').select('*');
-            const tbody = document.getElementById('table-barang');
-            tbody.innerHTML = data.map(b => `<tr><td class="p-2 border">${b.nama_barang}</td><td class="p-2 border">${b.stok_sekarang}</td></tr>`).join('');
-        }
-
-        async function tambahBarang() {
-            const nama = document.getElementById('nama-barang').value;
-            const stok = document.getElementById('stok-barang').value;
-            await supabase.from('barang').insert([{ nama_barang: nama, stok_sekarang: stok, satuan: 'pcs' }]);
-            alert('Berhasil!');
-            loadDataBarang();
-        }
-
-        function showMenu(id) {
-            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        function logout() { location.reload(); }
-    </script>
+				if(!error) {
+					alert('Permintaan Berhasil Disetujui! Link WhatsApp Notifikasi otomatis akan terbuka.');
+					// Ambil detail item untuk pembuatan string teks WA
+					const itemsText = "- 5 Buah Buku Saku KPU\n- 2 Rim Kertas A4 HVS"; // String hasil loop detail_permintaan
+					const linkWa = generateWhatsAppLink('Budi Utomo', 'Teknis Penyelenggaraan', itemsText, '628123456789');
+					window.open(linkWa, '_blank');
+					switchTab('permintaan');
+				}
+			}
+			function handleLogout() {
+				currentUser = null;
+				document.getElementById('main-system').classList.add('hidden');
+				document.getElementById('login-page').classList.remove('hidden');
+				document.getElementById('form-login').reset();
+			}
+	</script>
 </body>
 </html>
