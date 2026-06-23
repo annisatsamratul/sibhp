@@ -217,12 +217,14 @@
 			    if (tbody) {
 			        tbody.innerHTML = barang.map(b => `
 			            <tr class="border-b hover:bg-gray-50">
-			                <td class="p-2">${b.id}</td> <td class="p-2 font-medium">${b.nama_barang}</td>
+			                <td class="p-2 text-center">🖼️</td>
+			                <td class="p-2 font-medium">${b.nama_barang}</td>
 			                <td class="p-2">${b.minimum_stok}</td>
 			                <td class="p-2">${b.satuan}</td>
-			                <td class="p-2">${b.stok_sekarang}</td>
+			                <td class="p-2 font-bold">${b.stok_sekarang}</td>
 			            </tr>
 			        `).join('');
+			        console.log("Tabel berhasil di-render!");
 			    } else {
 			        console.error("Elemen table-dashboard-stok tidak ditemukan di HTML!");
 			    }
