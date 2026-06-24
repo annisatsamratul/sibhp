@@ -470,6 +470,12 @@
 			
 			// 10. SIMPAN DATA MASTER-DETAIL KE SUPABASE
 			async function submitMultiPermintaan() {
+			    // Validasi login terlebih dahulu
+			    if (!currentUser || !currentUser.id) {
+			        alert("Eror: Sesi login Anda tidak valid atau ID User tidak ditemukan. Silakan logout lalu login kembali!");
+			        return;
+			    }
+
 			    const ruanganTujuan = document.getElementById('req-ruangan').value;
 			
 			    if (!ruanganTujuan) {
@@ -482,10 +488,10 @@
 			    }
 			
 			    try {
-			        const userSubbagian = currentUser?.subbagian || 'Subbagian Umum'; 
-			        const userId = currentUser?.id;
+			        const userSubbagian = currentUser.subbagian || 'Subbagian Umum & Logistik'; 
+			        const userId = currentUser.id; // Mengambil ID dari user yang sedang login
 			
-			        // Insert ke tabel induk (permintaan)
+			        // 1. Insert ke tabel induk (permintaan)
 			        const { data: headerData, error: headerErr } = await _supabase
 			            .from('permintaan')
 			            .insert([{ 
@@ -499,28 +505,33 @@
 			        if (headerErr) throw headerErr;
 			        const newPermintaanId = headerData[0].id;
 			
-			        // Preparasi data untuk tabel anak (permintaan_detail)
+			        // 2. Preparasi data untuk tabel anak (permintaan_detail)
 			        const detailPayload = currentCart.map(item => ({
 			            permintaan_id: newPermintaanId,
 			            barang_id: item.barang_id,
 			            jumlah: item.jumlah
 			        }));
 			
-			        // Insert massal ke tabel anak
+			        // 3. Insert massal ke tabel anak
 			        const { error: detailErr } = await _supabase
 			            .from('permintaan_detail')
 			            .insert(detailPayload);
 			
 			        if (detailErr) throw detailErr;
 			
-			        alert('Permintaan multi-barang Sukses Dikirim!');
+			        alert('Permintaan multi-barang Sukses Dikirim ke Database!');
+			        
+			        // Reset form & keranjang setelah berhasil
 			        currentCart = []; 
 			        renderCartTable();
 			        document.getElementById('req-ruangan').value = '';
 			        
+			        // Segarkan data tabel riwayat & dashboard stok
 			        loadPermintaanData();
+			        loadDashboardData();
 			    } catch (err) {
 			        alert('Gagal memproses transaksi: ' + err.message);
+			        console.error("Detail Eror SQL:", err);
 			    }
 			}
 			
