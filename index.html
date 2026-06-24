@@ -74,89 +74,42 @@
 					<main class="flex-1 p-6 overflow-y-auto">
 					
 						<!-- VIEW: DASHBOARD -->
-						<section id="tab-permintaan" class="tab-content hidden">
-						    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-						        
-						        <div class="bg-white p-6 rounded-lg shadow-md h-fit lg:col-span-1 space-y-6">
-						            <div>
-						                <h3 class="text-lg font-bold text-blue-900 mb-2 border-b pb-2">Form Permintaan BHP</h3>
-						                <p class="text-xs text-gray-500 mb-4">Akun Anda otomatis mendeteksi Subbagian Anda.</p>
-						                
-						                <div class="space-y-3">
-						                    <div>
-						                        <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan Tujuan Pengiriman</label>
-						                        <select id="req-ruangan" required class="w-full p-2 border rounded bg-gray-50 text-sm">
-						                            <option value="">-- Pilih Ruangan Tujuan --</option>
-						                            <option value="Ruang Ketua & Anggota">Ruang Ketua & Anggota</option>
-						                            <option value="Ruang Sekretaris">Ruang Sekretaris</option>
-						                            <option value="Aula Utama">Aula Utama</option>
-						                            <option value="Ruang Rapat Paripurna">Ruang Rapat Paripurna</option>
-						                            <option value="Gudang Logistik">Gudang Logistik</option>
-						                            <option value="Ruang Kerja Umum">Ruang Kerja Umum</option>
-						                        </select>
-						                    </div>
-						                    
-						                    <hr class="my-2">
-						                    
-						                    <div>
-						                        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Barang</label>
-						                        <select id="req-barang" class="w-full p-2 border rounded bg-gray-50 text-sm">
-						                            </select>
-						                    </div>
-						                    <div>
-						                        <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
-						                        <input type="number" id="req-jumlah" min="1" class="w-full p-2 border rounded bg-gray-50 text-sm">
-						                    </div>
-						                    <button type="button" onclick="addToCart()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium p-2 rounded text-sm transition">
-						                        + Tambahkan ke Daftar
-						                    </button>
-						                </div>
-						            </div>
-						
-						            <div class="border-t pt-4">
-						                <h4 class="text-sm font-bold text-gray-700 mb-2">Daftar Barang Yang Akan Diminta:</h4>
-						                <div class="max-h-40 overflow-y-auto border rounded bg-gray-50 p-2">
-						                    <table class="w-full text-xs text-left">
-						                        <thead>
-						                            <tr class="border-b text-gray-500">
-						                                <th class="pb-1">Barang</th>
-						                                <th class="pb-1 text-center">Qty</th>
-						                                <th class="pb-1 text-center">Aksi</th>
-						                            </tr>
-						                        </thead>
-						                        <tbody id="cart-table-body">
-						                            <tr>
-						                                <td colspan="3" class="text-center py-4 text-gray-400">Belum ada barang di daftar.</td>
-						                            </tr>
-						                        </tbody>
-						                    </table>
-						                </div>
-						                <button type="button" onclick="submitMultiPermintaan()" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded text-sm shadow transition">
-						                    Kirim Semua Permintaan
-						                </button>
-						            </div>
-						        </div>
-						
-						        <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2">
-						            <h3 class="text-lg font-bold text-blue-900 mb-4 border-b pb-2">Daftar Riwayat Permintaan</h3>
-						            <div class="overflow-x-auto">
-						                <table class="w-full text-left border-collapse">
-						                    <thead>
-						                        <tr class="bg-gray-100 text-xs font-bold text-gray-600 uppercase border-b">
-						                            <th class="p-3">Info Permintaan</th>
-						                            <th class="p-3">Tujuan / Ruangan</th>
-						                            <th class="p-3">Daftar Barang & Qty</th>
-						                            <th class="p-3">Status</th>
-						                            <th class="p-3 text-center">Aksi</th>
-						                        </tr>
-						                    </thead>
-						                    <tbody id="table-permintaan-body" class="text-sm divide-y">
-						                        </tbody>
-						                </table>
-						            </div>
-						        </div>
-						
-						    </div>
+						<section id="tab-dashboard" class="tab-content">
+							<h2 class="text-xl font-bold mb-4 text-blue-900">Kondisi Real-time Inventaris KPU</h2>
+
+							<!-- Ringkasan Indikator Utama -->
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+								<div class="bg-white p-4 rounded shadow border-l-4 borderemerald-500">
+									<div class="text-sm text-gray-500 font-bold text-xs
+									uppercase">Total Jenis Barang</div>
+									<div id="stat-total-barang" class="text-2xl font-bold">0</div>
+								</div>
+								<div class="bg-white p-4 rounded shadow border-l-4 borderamber-500">
+									<div class="text-sm text-gray-500 font-bold text-xs uppercase">Stok di Bawah Batas Minimum</div>
+									<div id="stat-kritis-barang" class="text-2xl font-bold textred-600">0</div>
+								</div>
+								<div class="bg-white p-4 rounded shadow border-l-4 borderblue-500">
+									<div class="text-sm text-gray-500 font-bold text-xs uppercase">Permintaan Pending</div>
+									<div id="stat-pending-permintaan" class="text-2xl fontbold">0</div>
+								</div>
+							</div>
+							
+							<!-- Tabel Real-time Stok -->
+							<div class="bg-white p-4 rounded shadow mb-6">
+								<h3 class="font-bold text-base mb-3 text-slate-700">Data Stok Fisik Aktif</h3>
+								<table class="w-full text-left border-collapse">
+									<thead class="bg-gray-100 text-blue-900 text-xs font-bold">
+										<tr>
+											<th class="p-2 border">Gambar</th>
+											<th class="p-2 border">Nama Barang</th>
+											<th class="p-2 border">Min. Stok</th>
+											<th class="p-2 border">Satuan</th>
+											<th class="p-2 border">Stok Aktual</th>
+										</tr>
+									</thead>
+									<tbody id="table-dashboard-stok" class="text-sm"></tbody>
+								</table>
+							</div>
 						</section>
 						
 						<!-- VIEW: PERMINTAAN BARANG -->
@@ -378,19 +331,7 @@
 			    if (activeBtn) {
 			        activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700');
 			        activeBtn.classList.add('bg-blue-600', 'text-white', 'font-bold'); // Beri warna biru terang saat aktif
-			}
-				// document.querySelectorAll('.tab-content').forEach(el => {
-				// 	el.classList.add('hidden')
-				// });
-				
-				// const target = document.getElementById(`tab-${tabId}`);
-				
-				// if(target) {
-				// 	target.classList.remove('hidden');
-				// 	// console.log(`Tab ${tabId} dibuka`);
-				// } else{
-				// 	console.error(`Error: Elemen dengan id="tab-${tabId}" tidak ditemukan di HTML!`);
-				// }
+				}
 			}
 
 			async function loadDashboardData() {
@@ -801,46 +742,6 @@
 			        console.error("Gagal memuat riwayat:", err.message);
 			    }
 			}
-
-			// async function loadDashboardData() {
-			// 	console.log("Mencoba mengambil data dari Supabase..."); // Tambahkan ini
-    
-			// 	const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-			// 	const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
-			
-			// 	if (errBarang || errPermintaan) {
-			// 		console.error("Error Database:", errBarang || errPermintaan); // Lihat error di Console
-			// 		return;
-			// 	}
-
-   // 				console.log("Data barang ditemukan:", barang); // Lihat data di Console
-   //              // // Ambil data barang
-   //              // const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-   //              // // Ambil data permintaan pending
-   //              // const { data: permintaan, error: errPermintaan } = await _supabase.from('permintaan').select('*').eq('status', 'menunggu');
-
-   //              if (!errBarang && !errPermintaan) {
-   //                  // Update Statistik
-   //                  document.getElementById('stat-total-barang').innerText = barang.length;
-   //                  document.getElementById('stat-pending-permintaan').innerText = permintaan.length;
-                    
-   //                  // Hitung barang kritis (stok < minimum_stok)
-   //                  const kritis = barang.filter(b => b.stok_sekarang < b.minimum_stok);
-   //                  document.getElementById('stat-kritis-barang').innerText = kritis.length;
-
-   //                  // Render Tabel Dashboard
-   //                  const tbody = document.getElementById('table-dashboard-stok');
-   //                  tbody.innerHTML = barang.map(b => `
-   //                      <tr class="border-b hover:bg-gray-50">
-   //                          <td class="p-2"><img src="${b.gambar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 object-cover rounded"></td>
-   //                          <td class="p-2 font-medium">${b.nama_barang}</td>
-   //                          <td class="p-2">${b.minimum_stok}</td>
-   //                          <td class="p-2">${b.satuan}</td>
-   //                          <td class="p-2 ${b.stok_sekarang <= b.minimum_stok ? 'text-red-600 font-bold' : ''}">${b.stok_sekarang}</td>
-   //                      </tr>
-   //                  `).join('');
-   //              }
-   //          }
 			
 			// 3. LOGIKA FORM PERMINTAAN & AUTOMATED WHATSAPP LINK GENERATION
 			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
