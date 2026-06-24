@@ -125,7 +125,7 @@
 						                    <div>
 											    <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan Tujuan Pengiriman</label>
 											    <select id="req-ruangan" required class="w-full p-2 border rounded bg-gray-50 text-sm">
-											        <option value="">-- Memuat Daftar Ruangan... --</option>
+											        <option value="">-- Memuat Daftar Ruangan --</option>
 											    </select>
 											</div>
 						                    
@@ -134,7 +134,8 @@
 						                    <div>
 						                        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Barang</label>
 						                        <select id="req-barang" class="w-full p-2 border rounded bg-gray-50 text-sm">
-						                            </select>
+						                        	 <option value="">-- Pilih Barang --</option>
+												</select>
 						                    </div>
 						                    <div>
 						                        <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
@@ -235,26 +236,38 @@
 		<script>
 			// 1. KONFIGURASI KONEKSI DATABASE SUPABASE
 			const SUPABASE_URL = "https://pfuwxyofnrhnjdrelzbk.supabase.co";
-			const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdXd4eW9mbnJobmpkcmVsemJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxODMxNTYsImV4cCI6MjA5Nzc1OTE1Nn0.uYqKzWVJaHuq0vl69ghtYt05lXbrSy4Ehx6byfuNSt0"; // Anon Key Anda
+			const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdXd4eW9mbnJobmpkcmVsemJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxODMxNTYsImV4cCI6MjA5Nzc1OTE1Nn0.uYqKzWVJaHuq0vl69ghtYt05lXbrSy4Ehx6byfuNSt0"; 
 			const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 			let currentUser = null;
+			let currentCart = []; // Penampung keranjang belanja sementara
 			
-			// 2. LOGIKA AUTENTIKASI DAN ROLE-BASED ACCESS CONTROL (RBAC)
+			// 2. LOGIKA AUTENTIKASI DAN JALUR LOGIN
 			async function handleLogin(e) {
 				e.preventDefault();
 				const user = document.getElementById('login-username').value;
 				const pass = document.getElementById('login-password').value;
 				
-				// Menggunakan mekanisme built-in Supabase Auth atau tabel users kustom
+				// A. Ambil data autentikasi dasar dari view users
 				const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
 				
-				if (data && data.password_plain === pass) { // Integrasi hash Bcrypt direkomendasikan pada tahap prod
-					currentUser = data;
+				if (data && data.password_plain === pass) { 
+					
+					// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
+					await AmbilDataProfileUser(data.id);
+					
+					// Fallback jika data tabel users utama bermasalah, gunakan data view
+					if (!currentUser) {
+						currentUser = data;
+					}
+
+					// B. Tampilkan Halaman Utama System
 					document.getElementById('login-page').classList.add('hidden');
 					document.getElementById('main-system').classList.remove('hidden');
-					document.getElementById('user-display').innerText = `${data.nama_lengkap} (${data.role.toUpperCase()})`;
-					applyRolePermissions(data.role);
+					document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
+					
+					// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
+					applyRolePermissions(currentUser.role);
 					switchTab('dashboard');
 					loadDashboardData();
 					populateBarangDropdown();
@@ -262,12 +275,12 @@
 					loadPermintaanData();
 				} else {
 					alert('Kegagalan Autentikasi! Username atau Password Salah.');
-					}
+				}
 			}
 
+			// 3. FUNGSI MENARIK DETAIL RELASI USER (SUBBAGIAN & RUANGAN TUGAS)
 			async function AmbilDataProfileUser(userId) {
 			    try {
-			        // Melakukan teknik JOIN ke tabel subbagian dan tabel jembatan ruangan
 			        const { data, error } = await _supabase
 			            .from('users')
 			            .select(`
@@ -284,50 +297,45 @@
 			
 			        if (error) throw error;
 			
-			        // 🌟 KUNCI UTAMA: Kita ubah (flatten) hasilnya agar pas dengan kode yang kita buat kemarin
 			        currentUser = {
 			            id: data.id,
-			            role: data.role,
+			            role: data.role, 
 			            nama_lengkap: data.nama_lengkap,
-			            // Mengambil teks nama subbagian langsung
 			            subbagian: data.subbagian ? data.subbagian.nama_subbagian : 'Umum & Logistik',
-			            // Mengubah susunan array object ruangan yang rumit menjadi array teks biasa: ["Aula", "Gudang"]
 			            ruangan_tugas: data.user_ruangan ? data.user_ruangan.map(ur => ur.ruangan?.nama_ruangan) : []
 			        };
-			
-			        console.log("Data user berhasil dimuat dengan relasi database:", currentUser);
-			
+			        console.log("Data user & relasi berhasil dimuat:", currentUser);
 			    } catch (err) {
 			        console.error("Gagal memuat profil berelasi:", err.message);
 			    }
 			}
 			
+			// 4. HAK AKSES MENU SIDEBAR (ROLE-BASED ACCESS CONTROL)
 			function applyRolePermissions(role) {
-				// Sembunyikan semua menu proteksi terlebih dahulu
 				document.getElementById('menu-barang-masuk').classList.add('hidden');
 				document.getElementById('menu-stock-opname').classList.add('hidden');
 				document.getElementById('menu-master-barang').classList.add('hidden');
 				document.getElementById('menu-sysadmin').classList.add('hidden');
 				
-				if (role === 'operator') {
+				// Normalisasi pengecekan jika di DB tertulis 'pramu' atau 'pramubakti'
+				if (role === 'operator' || role === 'admin') {
 					document.getElementById('menu-barang-masuk').classList.remove('hidden');
 					document.getElementById('menu-stock-opname').classList.remove('hidden');
 					document.getElementById('menu-master-barang').classList.remove('hidden');
 					document.getElementById('menu-sysadmin').classList.remove('hidden');
-				} else if (role === 'pramubakti') {
+				} else if (role === 'pramubakti' || role === 'pramu') {
 					document.getElementById('menu-barang-masuk').classList.remove('hidden');
 					document.getElementById('menu-stock-opname').classList.remove('hidden');
 					document.getElementById('menu-master-barang').classList.remove('hidden');
 				}
 			}
 			
+			// 5. MANAJEMEN PERPINDAHAN TAB VIEW
 			function switchTab(tabId) {
-				// 1. Sembunyikan semua konten halaman
 			    document.querySelectorAll('.tab-content').forEach(el => {
 			        el.classList.add('hidden');
 			    });
 			    
-			    // 2. Tampilkan halaman yang dipilih jika elemennya ada
 			    const target = document.getElementById(`tab-${tabId}`); 
 			    if (target) {
 			        target.classList.remove('hidden');
@@ -335,35 +343,26 @@
 			        console.log(`Tab untuk "${tabId}" belum dibuat di HTML.`);
 			    }
 			
-			    // 3. FITUR BARU: Mengubah warna menu aktif di sidebar
-			    // Hapus warna aktif (bg-blue-600) dari semua tombol di dalam sidebar terlebih dahulu
 			    document.querySelectorAll('aside button').forEach(btn => {
 			        btn.classList.remove('bg-blue-600', 'text-white', 'font-bold');
-			        btn.classList.add('text-slate-300', 'hover:bg-slate-700'); // Kembali ke warna dasar
+			        btn.classList.add('text-slate-300', 'hover:bg-slate-700'); 
 			    });
 			
-			    // Cari tombol yang memicu fungsi switchTab dengan parameter tabId saat ini
-			    // Contoh: mencari button dengan onclick="switchTab('dashboard')"
 			    const activeBtn = document.querySelector(`aside button[onclick*="'${tabId}'"]`);
 			    if (activeBtn) {
 			        activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-700');
-			        activeBtn.classList.add('bg-blue-600', 'text-white', 'font-bold'); // Beri warna biru terang saat aktif
+			        activeBtn.classList.add('bg-blue-600', 'text-white', 'font-bold'); 
 				}
 			}
 
+			// 6. DASHBOARD REALTIME STOK
 			async function loadDashboardData() {
-			    console.log("Mencoba mengambil data dari Supabase...");
-			    
 			    const { data: barang, error: errBarang } = await _supabase.from('barang').select('*');
-			    
 			    if (errBarang) {
-			        console.error("Error Database:", errBarang);
+			        console.error("Error Database Dashboard:", errBarang);
 			        return;
 			    }
 			
-			    console.log("Data barang ditemukan:", barang);
-			    
-			    // Pastikan ID elemen 'table-dashboard-stok' sudah sesuai dengan yang ada di HTML Anda
 			    const tbody = document.getElementById('table-dashboard-stok');
 			    if (tbody) {
 			        tbody.innerHTML = barang.map(b => `
@@ -375,219 +374,58 @@
 			                <td class="p-2 font-bold">${b.stok_sekarang}</td>
 			            </tr>
 			        `).join('');
-			        console.log("Tabel berhasil di-render!");
-			    } else {
-			        console.error("Elemen table-dashboard-stok tidak ditemukan di HTML!");
 			    }
 			}
 
-			// 1. Memasukkan data barang dari database Supabase ke dalam Dropdown Form
+			// 7. 🌟 PERBAIKAN: MEMASUKKAN DATA BARANG KE DROPDOWN FORM
 			async function populateBarangDropdown() {
+			    try {
+			        const { data: listBarang, error } = await _supabase
+			            .from('barang')
+			            .select('id, nama_barang, satuan')
+			            .order('nama_barang', { ascending: true });
+			
+			        if (error) throw error;
+			
+			        const selectBarang = document.getElementById('req-barang');
+					if (selectBarang) {
+						selectBarang.innerHTML = '<option value="">-- Pilih Barang --</option>';
+						listBarang.forEach(b => {
+							selectBarang.innerHTML += `<option value="${b.id}">${b.nama_barang} (${b.satuan})</option>`;
+						});
+					}
+			    } catch (err) {
+			        console.error('Gagal memuat dropdown barang:', err.message);
+			    }
+			}
+
+			// 8. 🌟 PERBAIKAN: MEMASUKKAN DATA RUANGAN KE DROPDOWN FORM
+			async function populateRuanganDropdown() {
 			    try {
 			        const { data: listRuangan, error } = await _supabase
 			            .from('ruangan')
-			            .select('id, nama_ruangan') // Sesuaikan nama kolom di tabel ruangan Anda
+			            .select('id, nama_ruangan') 
 			            .order('nama_ruangan', { ascending: true });
 			
 			        if (error) throw error;
 			
 			        const selectRuangan = document.getElementById('req-ruangan');
-			        selectRuangan.innerHTML = '<option value="">-- Pilih Ruangan Tujuan --</option>';
-			
-			        listRuangan.forEach(r => {
-			            // Kita simpan value berupa nama_ruangan agar cocok dengan pengecekan tugas Pramu
-			            selectRuangan.innerHTML += `<option value="${r.nama_ruangan}">${r.nama_ruangan}</option>`;
-			        });
+					if (selectRuangan) {
+						selectRuangan.innerHTML = '<option value="">-- Pilih Ruangan Tujuan --</option>';
+						listRuangan.forEach(r => {
+							selectRuangan.innerHTML += `<option value="${r.nama_ruangan}">${r.nama_ruangan}</option>`;
+						});
+					}
 			    } catch (err) {
 			        console.error('Gagal memuat dropdown ruangan:', err.message);
 			    }
 			}
 
-			// ==========================================
-			// AKSIS TOMBOL 1: OPERATOR / ADMIN APPROVE
-			// ==========================================
-			async function approveTransaksi(permintaanId) {
-			    const konfirmasi = confirm("Apakah Anda yakin ingin menyetujui permintaan ini? Stok barang akan otomatis dikurangi.");
-			    if (!konfirmasi) return;
-			
-			    try {
-			        // A. Ambil rincian barang yang diminta dari permintaan_detail
-			        const { data: detailBarang, error: errDetail } = await _supabase
-			            .from('permintaan_detail')
-			            .select('barang_id, jumlah')
-			            .eq('permintaan_id', permintaanId);
-			
-			        if (errDetail) throw errDetail;
-			
-			        // B. Loop untuk mengurangi stok masing-masing barang di tabel 'barang'
-			        for (const item of detailBarang) {
-			            // 1. Ambil stok sekarang terlebih dahulu
-			            const { data: barangData, error: errGetBarang } = await _supabase
-			                .from('barang')
-			                .select('stok_sekarang, nama_barang')
-			                .eq('id', item.barang_id)
-			                .single();
-			
-			            if (errGetBarang) throw errGetBarang;
-			
-			            // 2. Validasi apakah stok cukup
-			            if (barangData.stok_sekarang < item.jumlah) {
-			                alert(`Gagal Approve! Stok untuk [${barangData.nama_barang}] tidak mencukupi. Sisa stok: ${barangData.stok_sekarang}`);
-			                return; // Batalkan seluruh proses transaksi jika ada 1 barang yang kurang
-			            }
-			
-			            // 3. Hitung sisa stok baru dan update ke tabel barang
-			            const stokBaru = barangData.stok_sekarang - item.jumlah;
-			            const { error: errUpdateStok } = await _supabase
-			                .from('barang')
-			                .update({ stok_sekarang: stokBaru })
-			                .eq('id', item.barang_id);
-			
-			            if (errUpdateStok) throw errUpdateStok;
-			        }
-			
-			        // C. Update status di tabel induk 'permintaan' menjadi 'Disetujui'
-			        const { error: errHeader } = await _supabase
-			            .from('permintaan')
-			            .update({ status: 'Disetujui' })
-			            .eq('id', permintaanId);
-			
-			        if (errHeader) throw errHeader;
-			
-			        alert('Permintaan disetujui! Tugas pengiriman telah diteruskan ke Pramubakti ruangan terkait.');
-			        
-			        // D. Segarkan tampilan data tabel & dashboard
-			        loadPermintaanData();
-			        if (typeof loadDashboardData === 'function') loadDashboardData(); 
-			        populateBarangDropdown();
-			
-			    } catch (err) {
-			        alert('Terjadi kesalahan saat memproses approval: ' + err.message);
-			    }
-			}
-			
-			// ==========================================
-			// AKSI TOMBOL 2: PRAMUBAKTI SELESAI KIRIM
-			// ==========================================
-			async function selesaiKirim(permintaanId) {
-			    const konfirmasi = confirm("Konfirmasi bahwa barang telah sukses diantar ke ruangan tujuan?");
-			    if (!konfirmasi) return;
-			
-			    try {
-			        // Cukup update status menjadi 'Selesai' karena stok sudah dipotong saat di-approve operator
-			        const { error } = await _supabase
-			            .from('permintaan')
-			            .update({ status: 'Selesai' })
-			            .eq('id', permintaanId);
-			
-			        if (error) throw error;
-			
-			        alert('Status diperbarui: Barang telah diterima di ruangan tujuan. Selesai!');
-			        loadPermintaanData(); // Refresh tabel riwayat
-			    } catch (err) {
-			        alert('Gagal memperbarui status pengiriman: ' + err.message);
-			    }
-			}
-			
-			// 2. Memuat Riwayat Permintaan Barang ke dalam Tabel
-			async function loadPermintaanData() {
-			    try {
-			        // Mengambil data permintaan digabung dengan nama barang dari tabel barang
-			        const { data: listPermintaan, error } = await _supabase
-			            .from('permintaan')
-			            .select(`
-			                id, created_at, nama_pemohon, subbagian, jumlah, status,
-			                barang ( nama_barang, satuan )
-			            `)
-			            .order('created_at', { ascending: false });
-			
-			        if (error) throw error;
-			
-			        const tableBody = document.getElementById('table-permintaan-body');
-			        tableBody.innerHTML = '';
-			
-			        if (listPermintaan.length === 0) {
-			            tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">Belum ada pengajuan permintaan.</td></tr>`;
-			            return;
-			        }
-			
-			        listPermintaan.forEach(req => {
-			            const tanggal = new Date(req.created_at).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
-			            const namaBarang = req.barang ? req.barang.nama_barang : 'Barang Terhapus';
-			            const satuan = req.barang ? req.barang.satuan : '';
-			            
-			            // Pengondisian warna Badge Status
-			            let badgeColor = 'bg-yellow-100 text-yellow-800'; // Pending
-			            if (req.status === 'Disetujui' || req.status === 'Selesai') badgeColor = 'bg-green-100 text-green-800';
-			            if (req.status === 'Ditolak') badgeColor = 'bg-red-100 text-red-800';
-			
-			            // Tombol Aksi khusus Operator untuk menyetujui
-			            let aksiTombol = '-';
-			            if (req.status === 'Pending' && currentUser && currentUser.role === 'operator') {
-			                aksiTombol = `
-			                    <button onclick="setujuiPermintaanOlehOperator('${req.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-2.5 py-1 rounded shadow transition">
-			                        Setujui
-			                    </button>
-			                `;
-			            }
-			
-			            tableBody.innerHTML += `
-			                <tr class="hover:bg-gray-50 transition">
-			                    <td class="p-3 text-gray-600 text-xs">${tanggal}</td>
-			                    <td class="p-3 font-medium text-gray-800">${req.nama_pemohon}<br><span class="text-xs text-gray-400">${req.subbagian}</span></td>
-			                    <td class="p-3 text-gray-700">${namaBarang}</td>
-			                    <td class="p-3 text-gray-700 font-bold">${req.jumlah} <span class="text-xs font-normal text-gray-400">${satuan}</span></td>
-			                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${badgeColor}">${req.status}</span></td>
-			                    <td class="p-3 text-center">${aksiTombol}</td>
-			                </tr>
-			            `;
-			        });
-			    } catch (err) {
-			        console.error('Gagal memuat data riwayat permintaan:', err.message);
-			    }
-			}
-			
-			// 3. Menangani Pengiriman Form Pengajuan Permintaan Baru
-			async function submitPermintaan(event) {
-			    event.preventDefault();
-			    
-			    const nama = document.getElementById('req-nama').value;
-			    const subbagian = document.getElementById('req-subbagian').value;
-			    const barangId = document.getElementById('req-barang').value;
-			    const jumlah = parseInt(document.getElementById('req-jumlah').value);
-			
-			    try {
-			        const { error } = await _supabase
-			            .from('permintaan')
-			            .insert([{ 
-			                nama_pemohon: nama, 
-			                subbagian: subbagian, 
-			                barang_id: barangId, 
-			                jumlah: jumlah, 
-			                status: 'Pending' 
-			            }]);
-			
-			        if (error) throw error;
-			
-			        alert('Permintaan berhasil dikirim ke Operator Umum & Logistik!');
-			        document.getElementById('form-permintaan').reset();
-			        
-			        // Segarkan data tabel dan dropdown sisa stok
-			        await loadPermintaanData();
-			        await populateBarangDropdown();
-			    } catch (err) {
-			        alert('Gagal mengirim permintaan: ' + err.message);
-			    }
-			}
-
-			// Variabel global penampung keranjang belanja sementara
-			let currentCart = []; 
-			
-			// 1. Fungsi Menambah Barang ke Keranjang Sementara (Frontend)
+			// 9. PROSES PENGELOLAAN KERANJANG SEMENTARA (FRONTEND)
 			function addToCart() {
 			    const selectBarang = document.getElementById('req-barang');
 			    const barangId = selectBarang.value;
-			    const namaBarang = selectBarang.options[selectBarang.selectedIndex].text;
+			    const namaBarang = selectBarang.options[selectBarang.selectedIndex]?.text;
 			    const jumlah = parseInt(document.getElementById('req-jumlah').value);
 			
 			    if (!barangId || !jumlah || jumlah <= 0) {
@@ -595,7 +433,6 @@
 			        return;
 			    }
 			
-			    // Cek apakah barang sudah ada di keranjang, jika ya, akumulasikan jumlahnya
 			    const existingIndex = currentCart.findIndex(item => item.barang_id === barangId);
 			    if (existingIndex > -1) {
 			        currentCart[existingIndex].jumlah += jumlah;
@@ -604,12 +441,12 @@
 			    }
 			
 			    renderCartTable();
-			    document.getElementById('req-jumlah').value = ''; // Reset input qty
+			    document.getElementById('req-jumlah').value = ''; 
 			}
 			
-			// 2. Merender Tabel Keranjang Sementara
 			function renderCartTable() {
 			    const tbody = document.getElementById('cart-table-body');
+			    if (!tbody) return;
 			    if (currentCart.length === 0) {
 			        tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-400">Belum ada barang di daftar.</td></tr>`;
 			        return;
@@ -631,7 +468,7 @@
 			    renderCartTable();
 			}
 			
-			// 3. Simpan data Master-Detail Sekaligus ke Supabase
+			// 10. SIMPAN DATA MASTER-DETAIL KE SUPABASE
 			async function submitMultiPermintaan() {
 			    const ruanganTujuan = document.getElementById('req-ruangan').value;
 			
@@ -645,12 +482,10 @@
 			    }
 			
 			    try {
-			        // Ambil data subbagian dari objek user yang sedang login (Session)
-			        // Pastikan variabel currentUser Anda sudah menyimpan field 'subbagian' hasil query login
 			        const userSubbagian = currentUser?.subbagian || 'Subbagian Umum'; 
 			        const userId = currentUser?.id;
 			
-			        // A. INSERT KE TABEL INDUK (permintaan)
+			        // Insert ke tabel induk (permintaan)
 			        const { data: headerData, error: headerErr } = await _supabase
 			            .from('permintaan')
 			            .insert([{ 
@@ -659,19 +494,19 @@
 			                ruangan_tujuan: ruanganTujuan, 
 			                status: 'Pending' 
 			            }])
-			            .select(); // Mengembalikan data yang barusan diinput agar mendapat ID-nya
+			            .select(); 
 			
 			        if (headerErr) throw headerErr;
 			        const newPermintaanId = headerData[0].id;
 			
-			        // B. PREPARASI DATA UNTUK TABEL ANAK (permintaan_detail)
+			        // Preparasi data untuk tabel anak (permintaan_detail)
 			        const detailPayload = currentCart.map(item => ({
 			            permintaan_id: newPermintaanId,
 			            barang_id: item.barang_id,
 			            jumlah: item.jumlah
 			        }));
 			
-			        // C. INSERT MASSAL KE TABEL ANAK
+			        // Insert massal ke tabel anak
 			        const { error: detailErr } = await _supabase
 			            .from('permintaan_detail')
 			            .insert(detailPayload);
@@ -679,21 +514,19 @@
 			        if (detailErr) throw detailErr;
 			
 			        alert('Permintaan multi-barang Sukses Dikirim!');
-			        currentCart = []; // Kosongkan keranjang
+			        currentCart = []; 
 			        renderCartTable();
 			        document.getElementById('req-ruangan').value = '';
 			        
-			        // Refresh tabel riwayat
 			        loadPermintaanData();
 			    } catch (err) {
 			        alert('Gagal memproses transaksi: ' + err.message);
 			    }
 			}
 			
-			// 4. Membaca Data Riwayat Permintaan (Join Master-Detail)
+			// 11. BACA DATA RIWAYAT PERMINTAAN (JOIN MASTER-DETAIL)
 			async function loadPermintaanData() {
 			    try {
-			        // Ambil data Induk berserta seluruh Relasi Anak-nya sekaligus
 			        const { data: mainData, error } = await _supabase
 			            .from('permintaan')
 			            .select(`
@@ -708,22 +541,22 @@
 			        if (error) throw error;
 			
 			        const tbody = document.getElementById('table-permintaan-body');
+			        if (!tbody) return;
 			        tbody.innerHTML = '';
 			
 			        mainData.forEach(req => {
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
 			            
-			            // Susun list barang anak menjadi format HTML text pack rapi
 			            const barangListHTML = req.permintaan_detail.map(d => `
 			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan})</span></div>
 			            `).join('');
 			
 			            let badge = 'bg-yellow-100 text-yellow-800';
-			            if(req.status === 'Disetujui') badge = 'bg-blue-100 text-blue-800';
+			            if(req.status === 'Disetujui' || req.status === 'diproses') badge = 'bg-blue-100 text-blue-800';
 			            if(req.status === 'Selesai') badge = 'bg-green-100 text-green-800';
 			            if(req.status === 'Ditolak') badge = 'bg-red-100 text-red-800';
 			
-			            // Tombol Aksi khusus Admin/Operator untuk Approve
+			            // Tombol Aksi khusus Operator / Admin
 			            let tombolAksi = '-';
 			            if (req.status === 'Pending' && (currentUser?.role === 'operator' || currentUser?.role === 'admin')) {
 			                tombolAksi = `
@@ -732,9 +565,8 @@
 			                    </button>
 			                `;
 			            } 
-			            // Khusus Pramubakti yang ditugaskan ke ruangan tersebut
-			            else if (req.status === 'Disetujui' && currentUser?.role === 'pramu') {
-			                // Mengecek apakah ruangan_tujuan ada di dalam daftar rungan_tugas pramu tersebut
+			            // 🌟 PERBAIKAN: Tombol untuk Pramubakti (Mengecek kesesuaian ruangan_tugas)
+			            else if ((req.status === 'Disetujui' || req.status === 'diproses') && (currentUser?.role === 'pramubakti' || currentUser?.role === 'pramu')) {
 			                const bisaKirim = currentUser.ruangan_tugas?.includes(req.ruangan_tujuan);
 			                if (bisaKirim) {
 			                    tombolAksi = `
@@ -760,28 +592,97 @@
 			    }
 			}
 			
-			// 3. LOGIKA FORM PERMINTAAN & AUTOMATED WHATSAPP LINK GENERATION
+			// 12. PROSES UPDATE POTONG STOK OTOMATIS SAAT APPROVE
+			async function approveTransaksi(permintaanId) {
+			    const konfirmasi = confirm("Apakah Anda yakin ingin menyetujui permintaan ini? Stok barang akan otomatis dikurangi.");
+			    if (!konfirmasi) return;
+			
+			    try {
+			        const { data: detailBarang, error: errDetail } = await _supabase
+			            .from('permintaan_detail')
+			            .select('barang_id, jumlah')
+			            .eq('permintaan_id', permintaanId);
+			
+			        if (errDetail) throw errDetail;
+			
+			        for (const item of detailBarang) {
+			            const { data: barangData, error: errGetBarang } = await _supabase
+			                .from('barang')
+			                .select('stok_sekarang, nama_barang')
+			                .eq('id', item.barang_id)
+			                .single();
+			
+			            if (errGetBarang) throw errGetBarang;
+			
+			            if (barangData.stok_sekarang < item.jumlah) {
+			                alert(`Gagal Approve! Stok untuk [${barangData.nama_barang}] tidak mencukupi. Sisa stok: ${barangData.stok_sekarang}`);
+			                return; 
+			            }
+			
+			            const stokBaru = barangData.stok_sekarang - item.jumlah;
+			            const { error: errUpdateStok } = await _supabase
+			                .from('barang')
+			                .update({ stok_sekarang: stokBaru })
+			                .eq('id', item.barang_id);
+			
+			            if (errUpdateStok) throw errUpdateStok;
+			        }
+			
+			        const { error: errHeader } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Disetujui' })
+			            .eq('id', permintaanId);
+			
+			        if (errHeader) throw errHeader;
+			
+			        alert('Permintaan disetujui! Tugas pengiriman telah diteruskan ke Pramubakti ruangan terkait.');
+			        
+			        loadPermintaanData();
+			        loadDashboardData();
+			        populateBarangDropdown();
+			    } catch (err) {
+			        alert('Terjadi kesalahan saat memproses approval: ' + err.message);
+			    }
+			}
+			
+			// 13. AKSI TOMBOL SELESAI OLEH PRAMUBAKTI
+			async function selesaiKirim(permintaanId) {
+			    const konfirmasi = confirm("Konfirmasi bahwa barang telah sukses diantar ke ruangan tujuan?");
+			    if (!konfirmasi) return;
+			
+			    try {
+			        const { error } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Selesai' })
+			            .eq('id', permintaanId);
+			
+			        if (error) throw error;
+			
+			        alert('Status diperbarui: Barang telah diterima di ruangan tujuan. Selesai!');
+			        loadPermintaanData(); 
+			    } catch (err) {
+			        alert('Gagal memperbarui status pengiriman: ' + err.message);
+			    }
+			}
+			
+			// 14. PENDUKUNG WHATSAPP NOTIFIKASI & LOGOUT
 			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
 				const pesan = `Halo Pramubakti KPU, terdapat Permintaan BHP baru yang sudah DISETUJUI oleh Operator.\n\n` +
 								`*Pemohon:* ${namaPemohon}\n` +
 								`*Subbagian:* ${subbagian}\n` +
 								`*Item Barang:*\n${itemsText}\n\n` +
 								`Mohon segera distribusikan logistik tersebut dan klik tombol 'SELESAI' di aplikasi untuk memotong stok sistem. Terima kasih.`;
-
 				return `https://api.whatsapp.com/send?phone=${noWaPramubakti}&text=${encodeURIComponent(pesan)}`;
 			}
 			
 			async function setujuiPermintaanOlehOperator(permintaanId) {
-				// Update status di PostgreSQL Supabase menjadi 'diproses'
 				const { data, error } = await _supabase.from('permintaan').update({ status:'diproses' }).eq('id', permintaanId).select();
-
 				if(!error) {
 					alert('Permintaan Berhasil Disetujui! Link WhatsApp Notifikasi otomatis akan terbuka.');
-					// Ambil detail item untuk pembuatan string teks WA
-					const itemsText = "- 5 Buah Buku Saku KPU\n- 2 Rim Kertas A4 HVS"; // String hasil loop detail_permintaan
-					const linkWa = generateWhatsAppLink('Budi Utomo', 'Teknis Penyelenggaraan', itemsText, '628123456789');
+					const itemsText = "- Detail Item Transaksi"; 
+					const linkWa = generateWhatsAppLink('Pemohon', 'Subbagian KPU', itemsText, '628123456789');
 					window.open(linkWa, '_blank');
-					switchTab('permintaan');
+					loadPermintaanData();
 				}
 			}
 			
