@@ -251,6 +251,43 @@
 					alert('Kegagalan Autentikasi! Username atau Password Salah.');
 					}
 			}
+
+			async function AmbilDataProfileUser(userId) {
+			    try {
+			        // Melakukan teknik JOIN ke tabel subbagian dan tabel jembatan ruangan
+			        const { data, error } = await _supabase
+			            .from('users')
+			            .select(`
+			                id, 
+			                role, 
+			                nama_lengkap,
+			                subbagian ( nama_subbagian ),
+			                user_ruangan ( 
+			                    ruangan ( nama_ruangan ) 
+			                )
+			            `)
+			            .eq('id', userId)
+			            .single();
+			
+			        if (error) throw error;
+			
+			        // 🌟 KUNCI UTAMA: Kita ubah (flatten) hasilnya agar pas dengan kode yang kita buat kemarin
+			        currentUser = {
+			            id: data.id,
+			            role: data.role,
+			            nama_lengkap: data.nama_lengkap,
+			            // Mengambil teks nama subbagian langsung
+			            subbagian: data.subbagian ? data.subbagian.nama_subbagian : 'Umum & Logistik',
+			            // Mengubah susunan array object ruangan yang rumit menjadi array teks biasa: ["Aula", "Gudang"]
+			            ruangan_tugas: data.user_ruangan ? data.user_ruangan.map(ur => ur.ruangan?.nama_ruangan) : []
+			        };
+			
+			        console.log("Data user berhasil dimuat dengan relasi database:", currentUser);
+			
+			    } catch (err) {
+			        console.error("Gagal memuat profil berelasi:", err.message);
+			    }
+			}
 			
 			function applyRolePermissions(role) {
 				// Sembunyikan semua menu proteksi terlebih dahulu
