@@ -114,60 +114,77 @@
 						
 						<!-- VIEW: PERMINTAAN BARANG -->
 						<section id="tab-permintaan" class="tab-content hidden">
-							<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 						        
-						        <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-						            <h3 class="text-lg font-bold text-blue-900 mb-4 border-b pb-2">Form Permintaan ATK Baru</h3>
-						            <form id="form-permintaan" onsubmit="submitPermintaan(event)" class="space-y-4">
-						                <div>
-						                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pemohon</label>
-						                    <input type="text" id="req-nama" required class="w-full p-2.5 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+						        <div class="bg-white p-6 rounded-lg shadow-md h-fit lg:col-span-1 space-y-6">
+						            <div>
+						                <h3 class="text-lg font-bold text-blue-900 mb-2 border-b pb-2">Form Permintaan BHP</h3>
+						                <p class="text-xs text-gray-500 mb-4">Akun Anda otomatis mendeteksi Subbagian Anda.</p>
+						                
+						                <div class="space-y-3">
+						                    <div>
+											    <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan Tujuan Pengiriman</label>
+											    <select id="req-ruangan" required class="w-full p-2 border rounded bg-gray-50 text-sm">
+											        <option value="">-- Memuat Daftar Ruangan... --</option>
+											    </select>
+											</div>
+						                    
+						                    <hr class="my-2">
+						                    
+						                    <div>
+						                        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Barang</label>
+						                        <select id="req-barang" class="w-full p-2 border rounded bg-gray-50 text-sm">
+						                            </select>
+						                    </div>
+						                    <div>
+						                        <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+						                        <input type="number" id="req-jumlah" min="1" class="w-full p-2 border rounded bg-gray-50 text-sm">
+						                    </div>
+						                    <button type="button" onclick="addToCart()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium p-2 rounded text-sm transition">
+						                        + Tambahkan ke Daftar
+						                    </button>
 						                </div>
-						                
-						                <div>
-										    <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan Tujuan Pengiriman</label>
-										    <select id="req-ruangan" required class="w-full p-2 border rounded bg-gray-50 text-sm">
-										        <option value="">-- Memuat Daftar Ruangan... --</option>
-										    </select>
-										</div>
-						                
-						                <div>
-						                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Barang (BHP)</label>
-						                    <select id="req-barang" required class="w-full p-2.5 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
-						                        <option value="">-- Memuat Data Barang... --</option>
-						                    </select>
+						            </div>
+						
+						            <div class="border-t pt-4">
+						                <h4 class="text-sm font-bold text-gray-700 mb-2">Daftar Barang Yang Akan Diminta:</h4>
+						                <div class="max-h-40 overflow-y-auto border rounded bg-gray-50 p-2">
+						                    <table class="w-full text-xs text-left">
+						                        <thead>
+						                            <tr class="border-b text-gray-500">
+						                                <th class="pb-1">Barang</th>
+						                                <th class="pb-1 text-center">Qty</th>
+						                                <th class="pb-1 text-center">Aksi</th>
+						                            </tr>
+						                        </thead>
+						                        <tbody id="cart-table-body">
+						                            <tr>
+						                                <td colspan="3" class="text-center py-4 text-gray-400">Belum ada barang di daftar.</td>
+						                            </tr>
+						                        </tbody>
+						                    </table>
 						                </div>
-						                
-						                <div>
-						                    <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Diminta</label>
-						                    <input type="number" id="req-jumlah" min="1" required class="w-full p-2.5 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
-						                </div>
-						                
-						                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-2.5 rounded-md transition duration-200">
-						                    Kirim Permintaan
+						                <button type="button" onclick="submitMultiPermintaan()" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded text-sm shadow transition">
+						                    Kirim Semua Permintaan
 						                </button>
-						            </form>
+						            </div>
 						        </div>
 						
-						        <div class="bg-white p-6 rounded-lg shadow-md lg:grid-cols-1 lg:col-span-2">
-						            <h3 class="text-lg font-bold text-blue-900 mb-4 border-b pb-2">Daftar & Status Permintaan ATK</h3>
+						        <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2">
+						            <h3 class="text-lg font-bold text-blue-900 mb-4 border-b pb-2">Daftar Riwayat Permintaan</h3>
 						            <div class="overflow-x-auto">
 						                <table class="w-full text-left border-collapse">
 						                    <thead>
 						                        <tr class="bg-gray-100 text-xs font-bold text-gray-600 uppercase border-b">
-						                            <th class="p-3">Tanggal</th>
-						                            <th class="p-3">Pemohon</th>
-						                            <th class="p-3">Barang</th>
-						                            <th class="p-3">Qty</th>
+						                            <th class="p-3">Info Permintaan</th>
+						                            <th class="p-3">Tujuan / Ruangan</th>
+						                            <th class="p-3">Daftar Barang & Qty</th>
 						                            <th class="p-3">Status</th>
 						                            <th class="p-3 text-center">Aksi</th>
 						                        </tr>
 						                    </thead>
 						                    <tbody id="table-permintaan-body" class="text-sm divide-y">
-						                        <tr>
-						                            <td colspan="6" class="p-4 text-center text-gray-500">Memuat riwayat permintaan...</td>
-						                        </tr>
-						                    </tbody>
+						                        </tbody>
 						                </table>
 						            </div>
 						        </div>
