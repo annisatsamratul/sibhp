@@ -74,42 +74,89 @@
 					<main class="flex-1 p-6 overflow-y-auto">
 					
 						<!-- VIEW: DASHBOARD -->
-						<section id="tab-dashboard" class="tab-content">
-							<h2 class="text-xl font-bold mb-4 text-blue-900">Kondisi Real-time Inventaris KPU</h2>
-
-							<!-- Ringkasan Indikator Utama -->
-							<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-								<div class="bg-white p-4 rounded shadow border-l-4 borderemerald-500">
-									<div class="text-sm text-gray-500 font-bold text-xs
-									uppercase">Total Jenis Barang</div>
-									<div id="stat-total-barang" class="text-2xl font-bold">0</div>
-								</div>
-								<div class="bg-white p-4 rounded shadow border-l-4 borderamber-500">
-									<div class="text-sm text-gray-500 font-bold text-xs uppercase">Stok di Bawah Batas Minimum</div>
-									<div id="stat-kritis-barang" class="text-2xl font-bold textred-600">0</div>
-								</div>
-								<div class="bg-white p-4 rounded shadow border-l-4 borderblue-500">
-									<div class="text-sm text-gray-500 font-bold text-xs uppercase">Permintaan Pending</div>
-									<div id="stat-pending-permintaan" class="text-2xl fontbold">0</div>
-								</div>
-							</div>
-							
-							<!-- Tabel Real-time Stok -->
-							<div class="bg-white p-4 rounded shadow mb-6">
-								<h3 class="font-bold text-base mb-3 text-slate-700">Data Stok Fisik Aktif</h3>
-								<table class="w-full text-left border-collapse">
-									<thead class="bg-gray-100 text-blue-900 text-xs font-bold">
-										<tr>
-											<th class="p-2 border">Gambar</th>
-											<th class="p-2 border">Nama Barang</th>
-											<th class="p-2 border">Min. Stok</th>
-											<th class="p-2 border">Satuan</th>
-											<th class="p-2 border">Stok Aktual</th>
-										</tr>
-									</thead>
-									<tbody id="table-dashboard-stok" class="text-sm"></tbody>
-								</table>
-							</div>
+						<section id="tab-permintaan" class="tab-content hidden">
+						    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						        
+						        <div class="bg-white p-6 rounded-lg shadow-md h-fit lg:col-span-1 space-y-6">
+						            <div>
+						                <h3 class="text-lg font-bold text-blue-900 mb-2 border-b pb-2">Form Permintaan BHP</h3>
+						                <p class="text-xs text-gray-500 mb-4">Akun Anda otomatis mendeteksi Subbagian Anda.</p>
+						                
+						                <div class="space-y-3">
+						                    <div>
+						                        <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan Tujuan Pengiriman</label>
+						                        <select id="req-ruangan" required class="w-full p-2 border rounded bg-gray-50 text-sm">
+						                            <option value="">-- Pilih Ruangan Tujuan --</option>
+						                            <option value="Ruang Ketua & Anggota">Ruang Ketua & Anggota</option>
+						                            <option value="Ruang Sekretaris">Ruang Sekretaris</option>
+						                            <option value="Aula Utama">Aula Utama</option>
+						                            <option value="Ruang Rapat Paripurna">Ruang Rapat Paripurna</option>
+						                            <option value="Gudang Logistik">Gudang Logistik</option>
+						                            <option value="Ruang Kerja Umum">Ruang Kerja Umum</option>
+						                        </select>
+						                    </div>
+						                    
+						                    <hr class="my-2">
+						                    
+						                    <div>
+						                        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Barang</label>
+						                        <select id="req-barang" class="w-full p-2 border rounded bg-gray-50 text-sm">
+						                            </select>
+						                    </div>
+						                    <div>
+						                        <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+						                        <input type="number" id="req-jumlah" min="1" class="w-full p-2 border rounded bg-gray-50 text-sm">
+						                    </div>
+						                    <button type="button" onclick="addToCart()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium p-2 rounded text-sm transition">
+						                        + Tambahkan ke Daftar
+						                    </button>
+						                </div>
+						            </div>
+						
+						            <div class="border-t pt-4">
+						                <h4 class="text-sm font-bold text-gray-700 mb-2">Daftar Barang Yang Akan Diminta:</h4>
+						                <div class="max-h-40 overflow-y-auto border rounded bg-gray-50 p-2">
+						                    <table class="w-full text-xs text-left">
+						                        <thead>
+						                            <tr class="border-b text-gray-500">
+						                                <th class="pb-1">Barang</th>
+						                                <th class="pb-1 text-center">Qty</th>
+						                                <th class="pb-1 text-center">Aksi</th>
+						                            </tr>
+						                        </thead>
+						                        <tbody id="cart-table-body">
+						                            <tr>
+						                                <td colspan="3" class="text-center py-4 text-gray-400">Belum ada barang di daftar.</td>
+						                            </tr>
+						                        </tbody>
+						                    </table>
+						                </div>
+						                <button type="button" onclick="submitMultiPermintaan()" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded text-sm shadow transition">
+						                    Kirim Semua Permintaan
+						                </button>
+						            </div>
+						        </div>
+						
+						        <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2">
+						            <h3 class="text-lg font-bold text-blue-900 mb-4 border-b pb-2">Daftar Riwayat Permintaan</h3>
+						            <div class="overflow-x-auto">
+						                <table class="w-full text-left border-collapse">
+						                    <thead>
+						                        <tr class="bg-gray-100 text-xs font-bold text-gray-600 uppercase border-b">
+						                            <th class="p-3">Info Permintaan</th>
+						                            <th class="p-3">Tujuan / Ruangan</th>
+						                            <th class="p-3">Daftar Barang & Qty</th>
+						                            <th class="p-3">Status</th>
+						                            <th class="p-3 text-center">Aksi</th>
+						                        </tr>
+						                    </thead>
+						                    <tbody id="table-permintaan-body" class="text-sm divide-y">
+						                        </tbody>
+						                </table>
+						            </div>
+						        </div>
+						
+						    </div>
 						</section>
 						
 						<!-- VIEW: PERMINTAAN BARANG -->
@@ -125,16 +172,11 @@
 						                </div>
 						                
 						                <div>
-						                    <label class="block text-sm font-medium text-gray-700 mb-1">Subbagian / Unit Kerja</label>
-						                    <select id="req-subbagian" required class="w-full p-2.5 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
-						                        <option value="">-- Pilih Subbagian --</option>
-						                        <option value="Keuangan">Subbagian Keuangan</option>
-						                        <option value="Umum dan Logistics">Subbagian Umum & Logistik</option>
-						                        <option value="Teknis Penyelenggaraan">Subbagian Teknis Penyelenggaraan & Hukum</option>
-						                        <option value="Perencanaan Data dan Informasi">Subbagian Perencanaan, Data & Informasi</option>
-						                        <option value="Hukum dan SDM">Subbagian Hukum & SDM</option>
-						                    </select>
-						                </div>
+										    <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan Tujuan Pengiriman</label>
+										    <select id="req-ruangan" required class="w-full p-2 border rounded bg-gray-50 text-sm">
+										        <option value="">-- Memuat Daftar Ruangan... --</option>
+										    </select>
+										</div>
 						                
 						                <div>
 						                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Barang (BHP)</label>
@@ -246,6 +288,7 @@
 					switchTab('dashboard');
 					loadDashboardData();
 					populateBarangDropdown();
+					populateRuanganDropdown();
 					loadPermintaanData();
 				} else {
 					alert('Kegagalan Autentikasi! Username atau Password Salah.');
@@ -383,20 +426,108 @@
 			// 1. Memasukkan data barang dari database Supabase ke dalam Dropdown Form
 			async function populateBarangDropdown() {
 			    try {
-			        const { data: listBarang, error } = await _supabase
-			            .from('barang')
-			            .select('id, nama_barang, stok_sekarang, satuan');
+			        const { data: listRuangan, error } = await _supabase
+			            .from('ruangan')
+			            .select('id, nama_ruangan') // Sesuaikan nama kolom di tabel ruangan Anda
+			            .order('nama_ruangan', { ascending: true });
 			
 			        if (error) throw error;
 			
-			        const selectBarang = document.getElementById('req-barang');
-			        selectBarang.innerHTML = '<option value="">-- Pilih Barang --</option>';
+			        const selectRuangan = document.getElementById('req-ruangan');
+			        selectRuangan.innerHTML = '<option value="">-- Pilih Ruangan Tujuan --</option>';
 			
-			        listBarang.forEach(item => {
-			            selectBarang.innerHTML += `<option value="${item.id}">${item.nama_barang} (Sisa: ${item.stok_sekarang} ${item.satuan})</option>`;
+			        listRuangan.forEach(r => {
+			            // Kita simpan value berupa nama_ruangan agar cocok dengan pengecekan tugas Pramu
+			            selectRuangan.innerHTML += `<option value="${r.nama_ruangan}">${r.nama_ruangan}</option>`;
 			        });
 			    } catch (err) {
-			        console.error('Gagal memuat dropdown barang:', err.message);
+			        console.error('Gagal memuat dropdown ruangan:', err.message);
+			    }
+			}
+
+			// ==========================================
+			// AKSIS TOMBOL 1: OPERATOR / ADMIN APPROVE
+			// ==========================================
+			async function approveTransaksi(permintaanId) {
+			    const konfirmasi = confirm("Apakah Anda yakin ingin menyetujui permintaan ini? Stok barang akan otomatis dikurangi.");
+			    if (!konfirmasi) return;
+			
+			    try {
+			        // A. Ambil rincian barang yang diminta dari permintaan_detail
+			        const { data: detailBarang, error: errDetail } = await _supabase
+			            .from('permintaan_detail')
+			            .select('barang_id, jumlah')
+			            .eq('permintaan_id', permintaanId);
+			
+			        if (errDetail) throw errDetail;
+			
+			        // B. Loop untuk mengurangi stok masing-masing barang di tabel 'barang'
+			        for (const item of detailBarang) {
+			            // 1. Ambil stok sekarang terlebih dahulu
+			            const { data: barangData, error: errGetBarang } = await _supabase
+			                .from('barang')
+			                .select('stok_sekarang, nama_barang')
+			                .eq('id', item.barang_id)
+			                .single();
+			
+			            if (errGetBarang) throw errGetBarang;
+			
+			            // 2. Validasi apakah stok cukup
+			            if (barangData.stok_sekarang < item.jumlah) {
+			                alert(`Gagal Approve! Stok untuk [${barangData.nama_barang}] tidak mencukupi. Sisa stok: ${barangData.stok_sekarang}`);
+			                return; // Batalkan seluruh proses transaksi jika ada 1 barang yang kurang
+			            }
+			
+			            // 3. Hitung sisa stok baru dan update ke tabel barang
+			            const stokBaru = barangData.stok_sekarang - item.jumlah;
+			            const { error: errUpdateStok } = await _supabase
+			                .from('barang')
+			                .update({ stok_sekarang: stokBaru })
+			                .eq('id', item.barang_id);
+			
+			            if (errUpdateStok) throw errUpdateStok;
+			        }
+			
+			        // C. Update status di tabel induk 'permintaan' menjadi 'Disetujui'
+			        const { error: errHeader } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Disetujui' })
+			            .eq('id', permintaanId);
+			
+			        if (errHeader) throw errHeader;
+			
+			        alert('Permintaan disetujui! Tugas pengiriman telah diteruskan ke Pramubakti ruangan terkait.');
+			        
+			        // D. Segarkan tampilan data tabel & dashboard
+			        loadPermintaanData();
+			        if (typeof loadDashboardData === 'function') loadDashboardData(); 
+			        populateBarangDropdown();
+			
+			    } catch (err) {
+			        alert('Terjadi kesalahan saat memproses approval: ' + err.message);
+			    }
+			}
+			
+			// ==========================================
+			// AKSI TOMBOL 2: PRAMUBAKTI SELESAI KIRIM
+			// ==========================================
+			async function selesaiKirim(permintaanId) {
+			    const konfirmasi = confirm("Konfirmasi bahwa barang telah sukses diantar ke ruangan tujuan?");
+			    if (!konfirmasi) return;
+			
+			    try {
+			        // Cukup update status menjadi 'Selesai' karena stok sudah dipotong saat di-approve operator
+			        const { error } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Selesai' })
+			            .eq('id', permintaanId);
+			
+			        if (error) throw error;
+			
+			        alert('Status diperbarui: Barang telah diterima di ruangan tujuan. Selesai!');
+			        loadPermintaanData(); // Refresh tabel riwayat
+			    } catch (err) {
+			        alert('Gagal memperbarui status pengiriman: ' + err.message);
 			    }
 			}
 			
@@ -491,6 +622,186 @@
 			    }
 			}
 
+			// Variabel global penampung keranjang belanja sementara
+			let currentCart = []; 
+			
+			// 1. Fungsi Menambah Barang ke Keranjang Sementara (Frontend)
+			function addToCart() {
+			    const selectBarang = document.getElementById('req-barang');
+			    const barangId = selectBarang.value;
+			    const namaBarang = selectBarang.options[selectBarang.selectedIndex].text;
+			    const jumlah = parseInt(document.getElementById('req-jumlah').value);
+			
+			    if (!barangId || !jumlah || jumlah <= 0) {
+			        alert("Silakan pilih barang dan isi jumlah valid terlebih dahulu!");
+			        return;
+			    }
+			
+			    // Cek apakah barang sudah ada di keranjang, jika ya, akumulasikan jumlahnya
+			    const existingIndex = currentCart.findIndex(item => item.barang_id === barangId);
+			    if (existingIndex > -1) {
+			        currentCart[existingIndex].jumlah += jumlah;
+			    } else {
+			        currentCart.push({ barang_id: barangId, nama_barang: namaBarang, jumlah: jumlah });
+			    }
+			
+			    renderCartTable();
+			    document.getElementById('req-jumlah').value = ''; // Reset input qty
+			}
+			
+			// 2. Merender Tabel Keranjang Sementara
+			function renderCartTable() {
+			    const tbody = document.getElementById('cart-table-body');
+			    if (currentCart.length === 0) {
+			        tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-400">Belum ada barang di daftar.</td></tr>`;
+			        return;
+			    }
+			
+			    tbody.innerHTML = currentCart.map((item, index) => `
+			        <tr class="border-b">
+			            <td class="py-1.5 font-medium text-gray-700">${item.nama_barang}</td>
+			            <td class="py-1.5 text-center font-bold">${item.jumlah}</td>
+			            <td class="py-1.5 text-center">
+			                <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700 font-bold">❌</button>
+			            </td>
+			        </tr>
+			    `).join('');
+			}
+			
+			function removeFromCart(index) {
+			    currentCart.splice(index, 1);
+			    renderCartTable();
+			}
+			
+			// 3. Simpan data Master-Detail Sekaligus ke Supabase
+			async function submitMultiPermintaan() {
+			    const ruanganTujuan = document.getElementById('req-ruangan').value;
+			
+			    if (!ruanganTujuan) {
+			        alert("Mohon pilih Ruangan Tujuan Pengiriman!");
+			        return;
+			    }
+			    if (currentCart.length === 0) {
+			        alert("Keranjang Anda masih kosong. Tambahkan barang dulu!");
+			        return;
+			    }
+			
+			    try {
+			        // Ambil data subbagian dari objek user yang sedang login (Session)
+			        // Pastikan variabel currentUser Anda sudah menyimpan field 'subbagian' hasil query login
+			        const userSubbagian = currentUser?.subbagian || 'Subbagian Umum'; 
+			        const userId = currentUser?.id;
+			
+			        // A. INSERT KE TABEL INDUK (permintaan)
+			        const { data: headerData, error: headerErr } = await _supabase
+			            .from('permintaan')
+			            .insert([{ 
+			                user_id: userId, 
+			                subbagian: userSubbagian, 
+			                ruangan_tujuan: ruanganTujuan, 
+			                status: 'Pending' 
+			            }])
+			            .select(); // Mengembalikan data yang barusan diinput agar mendapat ID-nya
+			
+			        if (headerErr) throw headerErr;
+			        const newPermintaanId = headerData[0].id;
+			
+			        // B. PREPARASI DATA UNTUK TABEL ANAK (permintaan_detail)
+			        const detailPayload = currentCart.map(item => ({
+			            permintaan_id: newPermintaanId,
+			            barang_id: item.barang_id,
+			            jumlah: item.jumlah
+			        }));
+			
+			        // C. INSERT MASSAL KE TABEL ANAK
+			        const { error: detailErr } = await _supabase
+			            .from('permintaan_detail')
+			            .insert(detailPayload);
+			
+			        if (detailErr) throw detailErr;
+			
+			        alert('Permintaan multi-barang Sukses Dikirim!');
+			        currentCart = []; // Kosongkan keranjang
+			        renderCartTable();
+			        document.getElementById('req-ruangan').value = '';
+			        
+			        // Refresh tabel riwayat
+			        loadPermintaanData();
+			    } catch (err) {
+			        alert('Gagal memproses transaksi: ' + err.message);
+			    }
+			}
+			
+			// 4. Membaca Data Riwayat Permintaan (Join Master-Detail)
+			async function loadPermintaanData() {
+			    try {
+			        // Ambil data Induk berserta seluruh Relasi Anak-nya sekaligus
+			        const { data: mainData, error } = await _supabase
+			            .from('permintaan')
+			            .select(`
+			                id, created_at, subbagian, ruangan_tujuan, status,
+			                permintaan_detail (
+			                    jumlah,
+			                    barang ( nama_barang, satuan )
+			                )
+			            `)
+			            .order('created_at', { ascending: false });
+			
+			        if (error) throw error;
+			
+			        const tbody = document.getElementById('table-permintaan-body');
+			        tbody.innerHTML = '';
+			
+			        mainData.forEach(req => {
+			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
+			            
+			            // Susun list barang anak menjadi format HTML text pack rapi
+			            const barangListHTML = req.permintaan_detail.map(d => `
+			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan})</span></div>
+			            `).join('');
+			
+			            let badge = 'bg-yellow-100 text-yellow-800';
+			            if(req.status === 'Disetujui') badge = 'bg-blue-100 text-blue-800';
+			            if(req.status === 'Selesai') badge = 'bg-green-100 text-green-800';
+			            if(req.status === 'Ditolak') badge = 'bg-red-100 text-red-800';
+			
+			            // Tombol Aksi khusus Admin/Operator untuk Approve
+			            let tombolAksi = '-';
+			            if (req.status === 'Pending' && (currentUser?.role === 'operator' || currentUser?.role === 'admin')) {
+			                tombolAksi = `
+			                    <button onclick="approveTransaksi('${req.id}')" class="bg-emerald-500 text-white text-xs px-2 py-1 rounded shadow hover:bg-emerald-600">
+			                        Approve
+			                    </button>
+			                `;
+			            } 
+			            // Khusus Pramubakti yang ditugaskan ke ruangan tersebut
+			            else if (req.status === 'Disetujui' && currentUser?.role === 'pramu') {
+			                // Mengecek apakah ruangan_tujuan ada di dalam daftar rungan_tugas pramu tersebut
+			                const bisaKirim = currentUser.ruangan_tugas?.includes(req.ruangan_tujuan);
+			                if (bisaKirim) {
+			                    tombolAksi = `
+			                        <button onclick="selesaiKirim('${req.id}')" class="bg-purple-500 text-white text-xs px-2 py-1 rounded shadow hover:bg-purple-600">
+			                            Selesai Kirim
+			                        </button>
+			                    `;
+			                }
+			            }
+			
+			            tbody.innerHTML += `
+			                <tr class="hover:bg-gray-50 border-b">
+			                    <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
+			                    <td class="p-3 font-semibold text-gray-800">${req.subbagian}<br><span class="text-xs font-normal text-amber-600">📍 ${req.ruangan_tujuan}</span></td>
+			                    <td class="p-3 space-y-0.5">${barangListHTML}</td>
+			                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badge}">${req.status}</span></td>
+			                    <td class="p-3 text-center">${tombolAksi}</td>
+			                </tr>
+			            `;
+			        });
+			    } catch (err) {
+			        console.error("Gagal memuat riwayat:", err.message);
+			    }
+			}
+
 			// async function loadDashboardData() {
 			// 	console.log("Mencoba mengambil data dari Supabase..."); // Tambahkan ini
     
@@ -555,6 +866,7 @@
 					switchTab('permintaan');
 				}
 			}
+			
 			function handleLogout() {
 				currentUser = null;
 				document.getElementById('main-system').classList.add('hidden');
