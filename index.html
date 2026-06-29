@@ -560,82 +560,145 @@
 			    try {
 			        if (!currentUser) return;
 			
-			        // 1. Ambil Role User
-			        const userRole = (currentUser.role || currentUser.level || '').toLowerCase();
-			
-			        // 🌟 2. ATUR TAMPILAN HEADER TABEL (TH)
-			        const thAksi = document.getElementById('th-aksi');
-			        if (thAksi) {
-			            if (userRole === 'admin') {
-			                thAksi.classList.remove('hidden'); // Tampilkan jika admin
-			            } else {
-			                thAksi.classList.add('hidden');    // Sembunyikan jika pramu/subbagian
-			            }
-			        }
-			
-			        // Base Query ke Supabase
-			        let query = _supabase.from('permintaan').select(`
-			            id, created_at, status, ruangan_tujuan,
-			            ruangan ( nama_ruangan ), 
-			            subbagian ( nama_subbagian ), 
-			            permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
-			        `);
-			
-			        // Filter data jika bukan Admin & Pramu (kunci sesuai subbagian)
-			        if (userRole !== 'admin' && userRole !== 'pramu') {
-			            const userSubbagianId = Number(currentUser.subbagian_id || currentUser.subbagian);
-			            if (userSubbagianId) {
-			                query = query.eq('subbagian', userSubbagianId);
-			            }
-			        }
-			
-			        const { data: mainData, error } = await query.order('created_at', { ascending: false });
-			        if (error) throw error;
-			
+			        const userRole = (currentUser.role || '').toLowerCase();
 			        const tbody = document.getElementById('table-permintaan-body');
+			        const thAksi = document.getElementById('th-aksi'); // Pastikan tag <th>Aksi</th> memiliki id="th-aksi"
+			        
 			        if (!tbody) return;
 			        tbody.innerHTML = '';
 			
+			        // Atur visibilitas header KOLOM AKSI
+			        if (thAksi) {
+			            // Sembunyikan kolom aksi hanya untuk subbagian karena mereka tidak punya aksi apa-pun
+			            if (userRole === 'subbagian') {
+			                thAksi.classList.add('hidden');
+			            } else {
+			                thAksi.classList.remove('hidden');
+			            }
+			        }
+			
+			        let mainData = [];
+			
+			        // ==========================================
+			        // LOGIKA FILTER QUERY BERDASARKAN ROLE
+			        // ==========================================
+			        
+			        if (userRole === 'admin') {
+			            // 1. ADMIN: Bisa melihat seluruh data permintaan tanpa filter
+			            let { data, error } = await _supabase
+			                .from('permintaan')
+			                .select(`
+			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			                    ruangan:ruangan_tujuan ( nama_ruangan ),
+			                    subbagian_rel:subbagian ( nama_subbagian ),
+			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			                `)
+			                .order('created_at', { ascending: false });
+			                
+			            if (error) throw error;
+			            mainData = data;
+			
+			        } else if (userRole === 'pramu') {
+			            // 2. PRAMU: Langkah A - Ambil daftar id ruangan tugas pramu dari tabel 'user_ruangan'
+			            const { data: userRooms, error: roomError } = await _supabase
+			                .from('user_ruangan')
+			                .select('ruangan_id')
+			                .eq('user_id', currentUser.id);
+			
+			            if (roomError) throw roomError;
+			
+			            // Mapping array id ruangan (diubah ke string karena tipe ruangan_tujuan di tabel permintaan berupa text)
+			            const assignedRoomIds = userRooms.map(r => String(r.ruangan_id));
+			
+			            if (assignedRoomIds.length > 0) {
+			                // Langkah B - Hanya tampilkan permintaan yang sudah di-Approve Admin ('diproses') & sesuai ruangan tugas pramu
+			                let { data, error } = await _supabase
+			                    .from('permintaan')
+			                    .select(`
+			                        id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			                        ruangan:ruangan_tujuan ( nama_ruangan ),
+			                        subbagian_rel:subbagian ( nama_subbagian ),
+			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			                    `)
+			                    .in('status', ['diproses', 'Selesai']) // Hanya melihat yang sudah disetujui admin (diproses) atau sudah selesai
+			                    .in('ruangan_tujuan', assignedRoomIds)
+			                    .order('created_at', { ascending: false });
+			
+			                if (error) throw error;
+			                mainData = data;
+			            } else {
+			                mainData = []; // Pramu belum didaftarkan ke ruangan mana pun di 'user_ruangan'
+			            }
+			
+			        } else {
+			            // 3. SUBBAGIAN: Hanya dapat melihat permintaan yang mereka buat sendiri (berdasarkan user_id)
+			            let { data, error } = await _supabase
+			                .from('permintaan')
+			                .select(`
+			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			                    ruangan:ruangan_tujuan ( nama_ruangan ),
+			                    subbagian_rel:subbagian ( nama_subbagian ),
+			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			                `)
+			                .eq('user_id', currentUser.id)
+			                .order('created_at', { ascending: false });
+			
+			            if (error) throw error;
+			            mainData = data;
+			        }
+			
+			        // ==========================================
+			        // RENDERING DATA KE TABEL HTML
+			        // ==========================================
 			        mainData.forEach(req => {
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
-			            let namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
-			            const namaSubbagianTeks = req.subbagian ? (req.subbagian.nama_subbagian || req.subbagian.nama) : 'Tanpa Subbagian';
+			            
+			            // Perbaikan pemanggilan Join yang aman
+			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || 'Tanpa Nama') : `ID #${req.ruangan_tujuan}`;
+			            const namaSubbagianTeks = req.subbagian_rel ? (req.subbagian_rel.nama_subbagian || 'Tanpa Subbagian') : 'Umum';
 			
 			            const detailList = req.permintaan_detail || [];
 			            const barangListHTML = detailList.map(d => `
-			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang || 'Barang Dihapus'} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan || ''})</span></div>
+			                <div class="text-xs text-gray-700 font-medium">
+			                    • ${d.barang?.nama_barang || 'Barang Dihapus'} 
+			                    <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan || ''})</span>
+			                </div>
 			            `).join('');
 			
-			            // Badge warna status
+			            // Atur Badge Status
 			            let badge = "bg-gray-100 text-gray-800";
 			            if (req.status === 'Pending') badge = "bg-amber-100 text-amber-800";
 			            if (req.status === 'diproses') badge = "bg-blue-100 text-blue-800";
 			            if (req.status === 'Selesai') badge = "bg-green-100 text-green-800";
 			            if (req.status === 'Ditolak') badge = "bg-red-100 text-red-800";
 			
-			            // 🌟 3. LOGIKA TOMBOL AKSI KHUSUS ADMIN
-			            let tdAksiHTML = ''; // Default kosong (tidak digambar)
-			            
+			            // ==========================================
+			            // LOGIKA TOMBOL AKSI BERDASARKAN ROLE & STATUS
+			            // ==========================================
+			            let tdAksiHTML = ''; 
+			            let tombolAksi = '<span class="text-gray-400">-</span>';
+			
 			            if (userRole === 'admin') {
-			                let tombolAksi = '';
-			                
-			                // Contoh logika tombol bawaan admin Anda:
 			                if (req.status === 'Pending') {
 			                    tombolAksi = `
-			                        <button onclick="setujuiPermintaanOlehOperator(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-medium mr-1">Setujui</button>
-			                        <button onclick="tolakPermintaan(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-medium">Tolak</button>
+			                        <button onclick="setujuiPermintaanOlehAdmin(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold mr-1">Approve</button>
+			                        <button onclick="tolakPermintaanOlehAdmin(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-semibold">Tolak</button>
 			                    `;
-			                } else {
-			                    tombolAksi = `<span class="text-xs text-gray-400">-</span>`;
 			                }
-			
-			                // Masukkan ke dalam tag <td> jika dia adalah Admin
+			                tdAksiHTML = `<td class="p-3 text-center">${tombolAksi}</td>`;
+			                
+			            } else if (userRole === 'pramu') {
+			                if (req.status === 'diproses') {
+			                    tombolAksi = `
+			                        <button onclick="selesaikanPermintaanOlehPramu(${req.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">Selesai</button>
+			                    `;
+			                }
 			                tdAksiHTML = `<td class="p-3 text-center">${tombolAksi}</td>`;
 			            }
 			
-			            // 🌟 4. GAMBAR TR KE DALAM TBODY
+			            // Append Baris ke Tabel
 			            tbody.innerHTML += `
-			                <tr class="hover:bg-gray-50 border-b">
+			                <tr class="hover:bg-gray-50 border-b text-sm">
 			                    <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
 			                    <td class="p-3">
 			                        <div class="font-semibold text-gray-800">${namaSubbagianTeks}</div>
@@ -643,12 +706,105 @@
 			                    </td>
 			                    <td class="p-3 space-y-0.5">${barangListHTML}</td>
 			                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badge}">${req.status}</span></td>
-			                    ${tdAksiHTML} 
+			                    ${tdAksiHTML}
 			                </tr>
 			            `;
 			        });
+			
 			    } catch (err) {
 			        console.error("Gagal memuat data riwayat:", err.message);
+			    }
+			}
+
+			// --- AKSI UNTUK ROLE ADMIN ---
+			async function setujuiPermintaanOlehAdmin(id) {
+			    if (!confirm("Setujui permintaan ini untuk diproses oleh Pramu?")) return;
+			    try {
+			        const { error } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'diproses' }) // Status berubah menjadi 'diproses' agar dibaca oleh Pramu
+			            .eq('id', id);
+			
+			        if (error) throw error;
+			        alert("Permintaan disetujui!");
+			        loadPermintaanData();
+			    } catch (err) {
+			        alert("Gagal menyetujui: " + err.message);
+			    }
+			}
+			
+			async function tolakPermintaanOlehAdmin(id) {
+			    if (!confirm("Apakah Anda yakin ingin menolak permintaan ini?")) return;
+			    try {
+			        const { error } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Ditolak' })
+			            .eq('id', id);
+			
+			        if (error) throw error;
+			        alert("Permintaan ditolak.");
+			        loadPermintaanData();
+			    } catch (err) {
+			        alert("Gagal menolak: " + err.message);
+			    }
+			}
+			
+			
+			// --- AKSI UNTUK ROLE PRAMU (UPDATE STOK BARANG) ---
+			async function selesaikanPermintaanOlehPramu(id) {
+			    if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
+			    
+			    try {
+			        // 1. Ambil detail barang dari permintaan ini untuk tahu jumlah yang diminta
+			        const { data: details, error: fetchError } = await _supabase
+			            .from('permintaan_detail')
+			            .select('barang_id, jumlah')
+			            .eq('permintaan_id', id);
+			
+			        if (fetchError) throw fetchError;
+			
+			        // 2. Loop setiap item barang untuk dikurangi stoknya di tabel 'barang'
+			        for (const item of details) {
+			            // Ambil jumlah stok saat ini dari database
+			            const { data: barangItem, error: barangError } = await _supabase
+			                .from('barang')
+			                .select('stok')
+			                .eq('id', item.barang_id)
+			                .single();
+			
+			            if (barangError) throw barangError;
+			
+			            // Hitung sisa stok baru
+			            const stokSekarang = barangItem.stok || 0;
+			            const stokBaru = stokSekarang - item.jumlah;
+			
+			            if (stokBaru < 0) {
+			                alert(`⚠️ Perhatian: Stok salah satu barang tidak mencukupi (Stok saat ini: ${stokSekarang}). Pemotongan tetap dilanjutkan.`);
+			            }
+			
+			            // Update stok baru ke tabel barang
+			            const { error: updateStokError } = await _supabase
+			                .from('barang')
+			                .update({ stok: stokBaru })
+			                .eq('id', item.barang_id);
+			
+			            if (updateStokError) throw updateStokError;
+			        }
+			
+			        // 3. Update status utama permintaan menjadi 'Selesai'
+			        const { error: updateStatusError } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Selesai' })
+			            .eq('id', id);
+			
+			        if (updateStatusError) throw updateStatusError;
+			
+			        alert("Permintaan berhasil diselesaikan dan stok barang telah diperbarui!");
+			        loadPermintaanData(); // Refresh isi tabel
+			
+			    } catch (err) {
+			        console.error(err);
+			        alert("Gagal menyelesaikan permintaan: " + err.message);
 			    }
 			}
 			
