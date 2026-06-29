@@ -560,54 +560,45 @@
 			    try {
 			        if (!currentUser) return;
 			
-			        // 📋 1. BUAT BASE QUERY TERLEBIH DAHULU
-			        let query = _supabase
-			            .from('permintaan')
-			            .select(`
-			                id, 
-			                created_at, 
-			                status,
-			                ruangan_tujuan,
-			                ruangan ( nama_ruangan ), 
-			                subbagian ( nama_subbagian ), 
-			                permintaan_detail (
-			                    jumlah,
-			                    barang ( nama_barang, satuan )
-			                )
-			            `);
+			        // 1. Ambil Role User
+			        const userRole = (currentUser.role || currentUser.level || '').toLowerCase();
 			
-			        // 🌟 2. ATUR FILTER BERDASARKAN ROLE USER
-			        // Ambil role user (sesuaikan jika di variabel Anda namanya 'level' atau 'jabatan')
-			        const userRole = (currentUser.role || currentUser.level || '').toLowerCase(); 
-			        
-			        // Jika BUKAN admin dan BUKAN pramu, maka kunci data berdasarkan ID Subbagiannya
-			        if (userRole !== 'operator' && userRole !== 'pramu') {
-			            const userSubbagianId = Number(currentUser.subbagian_id || currentUser.subbagian);
-			            
-			            if (userSubbagianId) {
-			                // Dokumen dikunci hanya yang kolom subbagian-nya sama dengan subbagian user login
-			                query = query.eq('subbagian', userSubbagianId); 
+			        // 🌟 2. ATUR TAMPILAN HEADER TABEL (TH)
+			        const thAksi = document.getElementById('th-aksi');
+			        if (thAksi) {
+			            if (userRole === 'admin') {
+			                thAksi.classList.remove('hidden'); // Tampilkan jika admin
+			            } else {
+			                thAksi.classList.add('hidden');    // Sembunyikan jika pramu/subbagian
 			            }
 			        }
 			
-			        // 3. JALANKAN QUERY DENGAN ORDER BY
-			        const { data: mainData, error } = await query.order('created_at', { ascending: false });
+			        // Base Query ke Supabase
+			        let query = _supabase.from('permintaan').select(`
+			            id, created_at, status, ruangan_tujuan,
+			            ruangan ( nama_ruangan ), 
+			            subbagian ( nama_subbagian ), 
+			            permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			        `);
 			
+			        // Filter data jika bukan Admin & Pramu (kunci sesuai subbagian)
+			        if (userRole !== 'admin' && userRole !== 'pramu') {
+			            const userSubbagianId = Number(currentUser.subbagian_id || currentUser.subbagian);
+			            if (userSubbagianId) {
+			                query = query.eq('subbagian', userSubbagianId);
+			            }
+			        }
+			
+			        const { data: mainData, error } = await query.order('created_at', { ascending: false });
 			        if (error) throw error;
 			
 			        const tbody = document.getElementById('table-permintaan-body');
 			        if (!tbody) return;
 			        tbody.innerHTML = '';
 			
-			        // 4. GAMBAR TABLE KELIAR (Sama seperti kode sebelumnya)
 			        mainData.forEach(req => {
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
-			            
-			            let namaRuanganTeks = `ID Ruang #${req.ruangan_tujuan}`;
-			            if (req.ruangan) {
-			                namaRuanganTeks = req.ruangan.nama_ruangan || req.ruangan.nama || namaRuanganTeks;
-			            }
-			            
+			            let namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
 			            const namaSubbagianTeks = req.subbagian ? (req.subbagian.nama_subbagian || req.subbagian.nama) : 'Tanpa Subbagian';
 			
 			            const detailList = req.permintaan_detail || [];
@@ -615,15 +606,34 @@
 			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang || 'Barang Dihapus'} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan || ''})</span></div>
 			            `).join('');
 			
-			            // ... (Pengaturan warna badge status & tombol aksi Anda tetap sama di sini) ...
+			            // Badge warna status
 			            let badge = "bg-gray-100 text-gray-800";
 			            if (req.status === 'Pending') badge = "bg-amber-100 text-amber-800";
 			            if (req.status === 'diproses') badge = "bg-blue-100 text-blue-800";
 			            if (req.status === 'Selesai') badge = "bg-green-100 text-green-800";
 			            if (req.status === 'Ditolak') badge = "bg-red-100 text-red-800";
 			
-			            let tombolAksi = ''; // Sesuaikan dengan logika hak akses tombol Anda
+			            // 🌟 3. LOGIKA TOMBOL AKSI KHUSUS ADMIN
+			            let tdAksiHTML = ''; // Default kosong (tidak digambar)
+			            
+			            if (userRole === 'admin') {
+			                let tombolAksi = '';
+			                
+			                // Contoh logika tombol bawaan admin Anda:
+			                if (req.status === 'Pending') {
+			                    tombolAksi = `
+			                        <button onclick="setujuiPermintaanOlehOperator(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-medium mr-1">Setujui</button>
+			                        <button onclick="tolakPermintaan(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-medium">Tolak</button>
+			                    `;
+			                } else {
+			                    tombolAksi = `<span class="text-xs text-gray-400">-</span>`;
+			                }
 			
+			                // Masukkan ke dalam tag <td> jika dia adalah Admin
+			                tdAksiHTML = `<td class="p-3 text-center">${tombolAksi}</td>`;
+			            }
+			
+			            // 🌟 4. GAMBAR TR KE DALAM TBODY
 			            tbody.innerHTML += `
 			                <tr class="hover:bg-gray-50 border-b">
 			                    <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
@@ -633,7 +643,7 @@
 			                    </td>
 			                    <td class="p-3 space-y-0.5">${barangListHTML}</td>
 			                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badge}">${req.status}</span></td>
-			                    <td class="p-3 text-center">${tombolAksi}</td>
+			                    ${tdAksiHTML} 
 			                </tr>
 			            `;
 			        });
