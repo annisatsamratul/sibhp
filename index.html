@@ -505,7 +505,7 @@
 			    }
 			
 			    try {
-			        const userSubbagian = currentUser.subbagian; 
+			        const userSubbagian = Number(currentUser.subbagian_id || currentUser.subbagian || 1); 
 			        const userId = currentUser.id;
 					const cleanRuanganId = Number(ruanganValue);
 
@@ -579,8 +579,11 @@
 			        const { data: mainData, error } = await _supabase
 			            .from('permintaan')
 			            .select(`
-			                id, created_at, subbagian, status,
-			                ruangan:ruangan_tujuan ( nama_ruangan ), 
+			                id, 
+							created_at, 
+							subbagian ( nama_subbagian ), 
+							status,
+			                ruangan_tujuan ( nama_ruangan ), 
 			                permintaan_detail (
 			                    jumlah,
 			                    barang ( nama_barang, satuan )
@@ -598,10 +601,18 @@
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
 			            
 			            // Mengambil nama ruangan hasil join relasi di atas
-			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
+			            // const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
 			
-			            const barangListHTML = req.permintaan_detail.map(d => `
-			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan})</span></div>
+			            // const barangListHTML = req.permintaan_detail.map(d => `
+			            //     <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan})</span></div>
+			            // `).join('');
+
+						// Sesuaikan 'nama_subbagian' dengan nama kolom teks asli di tabel subbagian Anda
+			            const namaSubbagianTeks = req.subbagian ? (req.subbagian.nama_subbagian || req.subbagian.nama) : 'Tanpa Subbagian';
+			
+			            const detailList = req.permintaan_detail || [];
+			            const barangListHTML = detailList.map(d => `
+			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang || 'Barang Dihapus'} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan || ''})</span></div>
 			            `).join('');
 			
 			            let badge = 'bg-yellow-100 text-yellow-800';
