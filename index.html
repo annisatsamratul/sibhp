@@ -490,9 +490,22 @@
 			    try {
 			        const userSubbagian = currentUser.subbagian || 'Subbagian Umum & Logistik'; 
 			        const userId = currentUser.id;
-			        
-			        // 🌟 PERBAIKAN: Pastikan ID Ruangan dikirim sebagai Angka murni (Integer)
-			        const cleanRuanganId = Number(ruanganValue);
+					const cleanRuanganId = Number(ruanganValue);
+
+					// 🔍 INTIP ISI KERANJANG: Tekan F12 di browser untuk melihat tabel ini!
+			        console.log("--- MENGECEK ISI KERANJANG SEBELUM DIKIRIM ---");
+			        console.table(currentCart);
+			
+			        // Validasi awal: Pastikan tidak ada barang_id yang kosong atau beralih jadi nama teks
+			        for (let i = 0; i < currentCart.length; i++) {
+			            const item = currentCart[i];
+			            if (!item.barang_id || isNaN(Number(item.barang_id))) {
+			                alert(`⚠️ EROR PADA KERANJANG (Baris ke-${i + 1}):\n` +
+			                      `Barang: "${item.nama_barang || 'Tanpa Nama'}" memiliki ID yang tidak valid (${item.barang_id}).\n\n` +
+			                      `Solusi: Pastikan fungsi saat Anda mengklik 'Tambah ke Keranjang' mengambil ID Barang (Angka), BUKAN Nama Barangnya!`);
+			                return; // Stop transaksi di sini sebelum bikin eror di Supabase
+			            }
+			        }					
 			
 			        // A. INSERT KE TABEL UTAMA (PERMINTAAN)
 			        const { data: headerData, error: headerErr } = await _supabase
