@@ -510,10 +510,14 @@
 			        const { data: headerData, error: headerErr } = await _supabase
 			            .from('permintaan')
 			            .insert([{ 
-			                user_id: userId, 
-			                subbagian: userSubbagian, 
-			                ruangan_tujuan: cleanRuanganId, // Mengirim ID Angka
-			                status: 'Pending' 
+							user_id: currentUser.id, 
+						    subbagian: currentUser.subbagian_id, // Pastikan baris ini di-insert agar terbaca di riwayat kelompok
+						    ruangan_tujuan: ruanganTujuanValue, 
+						    status: 'Pending'
+			                // user_id: userId, 
+			                // subbagian: userSubbagian, 
+			                // ruangan_tujuan: cleanRuanganId, // Mengirim ID Angka
+			                // status: 'Pending' 
 			            }])
 			            .select(); 
 			
@@ -561,6 +565,9 @@
 			        if (!currentUser) return;
 			
 			        const userRole = (currentUser.role || '').toLowerCase();
+			        // PERBAIKAN: Deteksi jika role bernilai 'admin' ATAU 'operator'
+			        const isAdminOrOperator = userRole === 'admin' || userRole === 'operator';
+			        
 			        const tbody = document.getElementById('table-permintaan-body');
 			        const thAksi = document.getElementById('th-aksi'); // Pastikan tag <th>Aksi</th> memiliki id="th-aksi"
 			        
@@ -569,9 +576,8 @@
 			
 			        // Atur visibilitas header KOLOM AKSI
 			        if (thAksi) {
-			            // Sembunyikan kolom aksi hanya untuk subbagian karena mereka tidak punya aksi apa-pun
 			            if (userRole === 'subbagian') {
-			                thAksi.classList.add('hidden');
+			                thAksi.classList.add('hidden'); // Sembunyikan kolom aksi jika dia subbagian
 			            } else {
 			                thAksi.classList.remove('hidden');
 			            }
@@ -583,8 +589,8 @@
 			        // LOGIKA FILTER QUERY BERDASARKAN ROLE
 			        // ==========================================
 			        
-			        if (userRole === 'admin') {
-			            // 1. ADMIN: Bisa melihat seluruh data permintaan tanpa filter
+			        if (isAdminOrOperator) {
+			            // 1. ADMIN / OPERATOR: Dapat melihat seluruh data permintaan tanpa filter apa pun
 			            let { data, error } = await _supabase
 			                .from('permintaan')
 			                .select(`
@@ -599,19 +605,16 @@
 			            mainData = data;
 			
 			        } else if (userRole === 'pramu') {
-			            // 2. PRAMU: Langkah A - Ambil daftar id ruangan tugas pramu dari tabel 'user_ruangan'
+			            // 2. PRAMU: Filter berdasarkan ruangan tugas pramu
 			            const { data: userRooms, error: roomError } = await _supabase
 			                .from('user_ruangan')
 			                .select('ruangan_id')
 			                .eq('user_id', currentUser.id);
 			
 			            if (roomError) throw roomError;
-			
-			            // Mapping array id ruangan (diubah ke string karena tipe ruangan_tujuan di tabel permintaan berupa text)
 			            const assignedRoomIds = userRooms.map(r => String(r.ruangan_id));
 			
 			            if (assignedRoomIds.length > 0) {
-			                // Langkah B - Hanya tampilkan permintaan yang sudah di-Approve Admin ('diproses') & sesuai ruangan tugas pramu
 			                let { data, error } = await _supabase
 			                    .from('permintaan')
 			                    .select(`
@@ -620,18 +623,19 @@
 			                        subbagian_rel:subbagian ( nama_subbagian ),
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
-			                    .in('status', ['diproses', 'Selesai']) // Hanya melihat yang sudah disetujui admin (diproses) atau sudah selesai
+			                    .in('status', ['diproses', 'Selesai'])
 			                    .in('ruangan_tujuan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
 			                if (error) throw error;
 			                mainData = data;
 			            } else {
-			                mainData = []; // Pramu belum didaftarkan ke ruangan mana pun di 'user_ruangan'
+			                mainData = [];
 			            }
 			
-			        } else {
-			            // 3. SUBBAGIAN: Hanya dapat melihat permintaan yang mereka buat sendiri (berdasarkan user_id)
+			        } else if (userRole === 'subbagian') {
+			            // 3. SUBBAGIAN: Menggunakan 'subbagian' (ID kelompok subbagian) agar semua permintaan 
+			            // dari subbagian yang sama (misal: Umum dan Logistik) bisa saling terlihat.
 			            let { data, error } = await _supabase
 			                .from('permintaan')
 			                .select(`
@@ -640,7 +644,7 @@
 			                    subbagian_rel:subbagian ( nama_subbagian ),
 			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                `)
-			                .eq('user_id', currentUser.id)
+			                .eq('subbagian', currentUser.subbagian_id) // PERBAIKAN FILTER DISINI
 			                .order('created_at', { ascending: false });
 			
 			            if (error) throw error;
@@ -653,7 +657,6 @@
 			        mainData.forEach(req => {
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
 			            
-			            // Perbaikan pemanggilan Join yang aman
 			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || 'Tanpa Nama') : `ID #${req.ruangan_tujuan}`;
 			            const namaSubbagianTeks = req.subbagian_rel ? (req.subbagian_rel.nama_subbagian || 'Tanpa Subbagian') : 'Umum';
 			
@@ -672,31 +675,27 @@
 			            if (req.status === 'Selesai') badge = "bg-green-100 text-green-800";
 			            if (req.status === 'Ditolak') badge = "bg-red-100 text-red-800";
 			
-			            // ==========================================
-			            // LOGIKA TOMBOL AKSI BERDASARKAN ROLE & STATUS
-			            // ==========================================
-			            let tdAksiHTML = ''; 
+			            // Logika Tombol Aksi
 			            let tombolAksi = '<span class="text-gray-400">-</span>';
 			
-			            if (userRole === 'admin') {
+			            if (isAdminOrOperator) {
 			                if (req.status === 'Pending') {
 			                    tombolAksi = `
 			                        <button onclick="setujuiPermintaanOlehAdmin(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold mr-1">Approve</button>
 			                        <button onclick="tolakPermintaanOlehAdmin(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-semibold">Tolak</button>
 			                    `;
 			                }
-			                tdAksiHTML = `<td class="p-3 text-center">${tombolAksi}</td>`;
-			                
 			            } else if (userRole === 'pramu') {
 			                if (req.status === 'diproses') {
 			                    tombolAksi = `
 			                        <button onclick="selesaikanPermintaanOlehPramu(${req.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">Selesai</button>
 			                    `;
 			                }
-			                tdAksiHTML = `<td class="p-3 text-center">${tombolAksi}</td>`;
 			            }
 			
-			            // Append Baris ke Tabel
+			            // Kondisional Render Kolom Aksi (Subbagian tidak dirender kolom aksinya)
+			            const tdAksiHTML = userRole === 'subbagian' ? '' : `<td class="p-3 text-center">${tombolAksi}</td>`;
+			
 			            tbody.innerHTML += `
 			                <tr class="hover:bg-gray-50 border-b text-sm">
 			                    <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
@@ -713,23 +712,6 @@
 			
 			    } catch (err) {
 			        console.error("Gagal memuat data riwayat:", err.message);
-			    }
-			}
-
-			// --- AKSI UNTUK ROLE ADMIN ---
-			async function setujuiPermintaanOlehAdmin(id) {
-			    if (!confirm("Setujui permintaan ini untuk diproses oleh Pramu?")) return;
-			    try {
-			        const { error } = await _supabase
-			            .from('permintaan')
-			            .update({ status: 'diproses' }) // Status berubah menjadi 'diproses' agar dibaca oleh Pramu
-			            .eq('id', id);
-			
-			        if (error) throw error;
-			        alert("Permintaan disetujui!");
-			        loadPermintaanData();
-			    } catch (err) {
-			        alert("Gagal menyetujui: " + err.message);
 			    }
 			}
 			
