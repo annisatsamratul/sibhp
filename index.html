@@ -601,7 +601,7 @@
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
 			            
 			            // Mengambil nama ruangan hasil join relasi di atas
-			            // const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
+			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
 			
 			            // const barangListHTML = req.permintaan_detail.map(d => `
 			            //     <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan})</span></div>
