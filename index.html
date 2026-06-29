@@ -379,24 +379,41 @@
 
 			// 7. 🌟 PERBAIKAN: MEMASUKKAN DATA BARANG KE DROPDOWN FORM
 			async function populateBarangDropdown() {
-			    try {
-			        const { data: listBarang, error } = await _supabase
-			            .from('barang')
-			            .select('id, nama_barang, satuan')
-			            .order('nama_barang', { ascending: true });
+				const { data: listBarang, error } = await _supabase
+			        .from('barang')
+			        .select('*')
+			        .order('id', { ascending: true });
 			
-			        if (error) throw error;
+			    if (error) return;
 			
-			        const selectBarang = document.getElementById('req-barang');
-					if (selectBarang) {
-						selectBarang.innerHTML = '<option value="">-- Pilih Barang --</option>';
-						listBarang.forEach(b => {
-							selectBarang.innerHTML += `<option value="${b.id}">${b.nama_barang} (${b.satuan})</option>`;
-						});
-					}
-			    } catch (err) {
-			        console.error('Gagal memuat dropdown barang:', err.message);
+			    const selectBarang = document.getElementById('req-barang'); 
+			    if (selectBarang) {
+			        selectBarang.innerHTML = '<option value="">-- Pilih Barang --</option>';
+			        
+			        listBarang.forEach(b => {
+			            // 🌟 PERHATIKAN DI SINI:
+			            // value HARUS b.id (ID asli dari database), BUKAN indeks urutan!
+			            selectBarang.innerHTML += `<option value="${b.id}">${b.nama_barang} (${b.satuan})</option>`;
+			        });
 			    }
+			  //   try {
+			  //       const { data: listBarang, error } = await _supabase
+			  //           .from('barang')
+			  //           .select('id, nama_barang, satuan')
+			  //           .order('nama_barang', { ascending: true });
+			
+			  //       if (error) throw error;
+			
+			  //       const selectBarang = document.getElementById('req-barang');
+					// if (selectBarang) {
+					// 	selectBarang.innerHTML = '<option value="">-- Pilih Barang --</option>';
+					// 	listBarang.forEach(b => {
+					// 		selectBarang.innerHTML += `<option value="${b.id}">${b.nama_barang} (${b.satuan})</option>`;
+					// 	});
+					// }
+			  //   } catch (err) {
+			  //       console.error('Gagal memuat dropdown barang:', err.message);
+			  //   }
 			}
 
 			// 8. 🌟 PERBAIKAN: MEMASUKKAN DATA RUANGAN KE DROPDOWN FORM
