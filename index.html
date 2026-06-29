@@ -404,8 +404,8 @@
 			    try {
 			        const { data: listRuangan, error } = await _supabase
 			            .from('ruangan')
-			            .select('id, nama_ruangan') 
-			            .order('nama_ruangan', { ascending: true });
+			            .select('*')
+			            .order('id', { ascending: true });
 			
 			        if (error) throw error;
 			
@@ -413,7 +413,9 @@
 					if (selectRuangan) {
 						selectRuangan.innerHTML = '<option value="">-- Pilih Ruangan Tujuan --</option>';
 						listRuangan.forEach(r => {
-							selectRuangan.innerHTML += `<option value="${r.nama_ruangan}">${r.nama_ruangan}</option>`;
+							// 🌟 PERBAIKAN: value diisi dengan r.id (Angka ID Ruangan)
+							const namaRuang = r.nama_ruangan || r.nama || r.nama_ruang;
+							selectRuangan.innerHTML += `<option value="${r.id}">${namaRuang}</option>`;
 						});
 					}
 			    } catch (err) {
@@ -470,68 +472,74 @@
 			
 			// 10. SIMPAN DATA MASTER-DETAIL KE SUPABASE
 			async function submitMultiPermintaan() {
-			    // Validasi login terlebih dahulu
 			    if (!currentUser || !currentUser.id) {
-			        alert("Eror: Sesi login Anda tidak valid atau ID User tidak ditemukan. Silakan logout lalu login kembali!");
+			        alert("Sesi login tidak terbaca. Silakan klik Logout lalu Login kembali.");
 			        return;
 			    }
 
-			    const ruanganTujuan = document.getElementById('req-ruangan').value;
-			
-			    if (!ruanganTujuan) {
+			    const ruanganValue = document.getElementById('req-ruangan').value;
+			    if (!ruanganValue) {
 			        alert("Mohon pilih Ruangan Tujuan Pengiriman!");
 			        return;
 			    }
 			    if (currentCart.length === 0) {
-			        alert("Keranjang Anda masih kosong. Tambahkan barang dulu!");
+			        alert("Daftar barang belanjaan Anda masih kosong!");
 			        return;
 			    }
 			
 			    try {
 			        const userSubbagian = currentUser.subbagian || 'Subbagian Umum & Logistik'; 
-			        const userId = currentUser.id; // Mengambil ID dari user yang sedang login
+			        const userId = currentUser.id;
+			        
+			        // 🌟 PERBAIKAN: Pastikan ID Ruangan dikirim sebagai Angka murni (Integer)
+			        const cleanRuanganId = Number(ruanganValue);
 			
-			        // 1. Insert ke tabel induk (permintaan)
+			        // A. INSERT KE TABEL UTAMA (PERMINTAAN)
 			        const { data: headerData, error: headerErr } = await _supabase
 			            .from('permintaan')
 			            .insert([{ 
 			                user_id: userId, 
 			                subbagian: userSubbagian, 
-			                ruangan_tujuan: ruanganTujuan, 
+			                ruangan_tujuan: cleanRuanganId, // Mengirim ID Angka
 			                status: 'Pending' 
 			            }])
 			            .select(); 
 			
-			        if (headerErr) throw headerErr;
+			        if (headerErr) {
+			            alert(`[EROR PERMINTAAN]: ${headerErr.message}`);
+			            return;
+			        }
+			
 			        const newPermintaanId = headerData[0].id;
 			
-			        // 2. Preparasi data untuk tabel anak (permintaan_detail)
+			        // B. PREPARASI DATA DETAIL (Konversi ID Barang & Jumlah ke Angka)
 			        const detailPayload = currentCart.map(item => ({
 			            permintaan_id: newPermintaanId,
-			            barang_id: item.barang_id,
-			            jumlah: item.jumlah
+			            barang_id: Number(item.barang_id), // Pastikan berupa Angka
+			            jumlah: Number(item.jumlah)        // Pastikan berupa Angka
 			        }));
 			
-			        // 3. Insert massal ke tabel anak
+			        // C. INSERT MASSAL KE TABEL ANAK (PERMINTAAN_DETAIL)
 			        const { error: detailErr } = await _supabase
 			            .from('permintaan_detail')
 			            .insert(detailPayload);
 			
-			        if (detailErr) throw detailErr;
+			        if (detailErr) {
+			            alert(`[EROR DETAIL]: ${detailErr.message}`);
+			            return;
+			        }
 			
-			        alert('Permintaan multi-barang Sukses Dikirim ke Database!');
+			        alert('🎉 Transaksi Berhasil Disimpan ke Database!');
 			        
-			        // Reset form & keranjang setelah berhasil
+			        // Reset Form & Keranjang
 			        currentCart = []; 
 			        renderCartTable();
 			        document.getElementById('req-ruangan').value = '';
 			        
-			        // Segarkan data tabel riwayat & dashboard stok
 			        loadPermintaanData();
 			        loadDashboardData();
 			    } catch (err) {
-			        alert('Gagal memproses transaksi: ' + err.message);
-			        console.error("Detail Eror SQL:", err);
+			        alert('Aplikasi crash: ' + err.message);
 			    }
 			}
 			
@@ -541,7 +549,8 @@
 			        const { data: mainData, error } = await _supabase
 			            .from('permintaan')
 			            .select(`
-			                id, created_at, subbagian, ruangan_tujuan, status,
+			                id, created_at, subbagian, status,
+			                ruangan:ruangan_tujuan ( nama_ruangan ), 
 			                permintaan_detail (
 			                    jumlah,
 			                    barang ( nama_barang, satuan )
@@ -558,6 +567,9 @@
 			        mainData.forEach(req => {
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
 			            
+			            // Mengambil nama ruangan hasil join relasi di atas
+			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || req.ruangan.nama) : `ID Ruang #${req.ruangan_tujuan}`;
+			
 			            const barangListHTML = req.permintaan_detail.map(d => `
 			                <div class="text-xs text-gray-700 font-medium">• ${d.barang?.nama_barang} <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan})</span></div>
 			            `).join('');
@@ -567,31 +579,22 @@
 			            if(req.status === 'Selesai') badge = 'bg-green-100 text-green-800';
 			            if(req.status === 'Ditolak') badge = 'bg-red-100 text-red-800';
 			
-			            // Tombol Aksi khusus Operator / Admin
 			            let tombolAksi = '-';
 			            if (req.status === 'Pending' && (currentUser?.role === 'operator' || currentUser?.role === 'admin')) {
-			                tombolAksi = `
-			                    <button onclick="approveTransaksi('${req.id}')" class="bg-emerald-500 text-white text-xs px-2 py-1 rounded shadow hover:bg-emerald-600">
-			                        Approve
-			                    </button>
-			                `;
+			                tombolAksi = `<button onclick="approveTransaksi('${req.id}')" class="bg-emerald-500 text-white text-xs px-2 py-1 rounded shadow hover:bg-emerald-600">Approve</button>`;
 			            } 
-			            // 🌟 PERBAIKAN: Tombol untuk Pramubakti (Mengecek kesesuaian ruangan_tugas)
 			            else if ((req.status === 'Disetujui' || req.status === 'diproses') && (currentUser?.role === 'pramubakti' || currentUser?.role === 'pramu')) {
-			                const bisaKirim = currentUser.ruangan_tugas?.includes(req.ruangan_tujuan);
+			                // Sesuaikan pengecekan dengan teks nama ruangan asli
+			                const bisaKirim = currentUser.ruangan_tugas?.includes(namaRuanganTeks);
 			                if (bisaKirim) {
-			                    tombolAksi = `
-			                        <button onclick="selesaiKirim('${req.id}')" class="bg-purple-500 text-white text-xs px-2 py-1 rounded shadow hover:bg-purple-600">
-			                            Selesai Kirim
-			                        </button>
-			                    `;
+			                    tombolAksi = `<button onclick="selesaiKirim('${req.id}')" class="bg-purple-500 text-white text-xs px-2 py-1 rounded shadow hover:bg-purple-600">Selesai Kirim</button>`;
 			                }
 			            }
 			
 			            tbody.innerHTML += `
 			                <tr class="hover:bg-gray-50 border-b">
 			                    <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
-			                    <td class="p-3 font-semibold text-gray-800">${req.subbagian}<br><span class="text-xs font-normal text-amber-600">📍 ${req.ruangan_tujuan}</span></td>
+			                    <td class="p-3 font-semibold text-gray-800">${req.subbagian}<br><span class="text-xs font-normal text-amber-600">📍 ${namaRuanganTeks}</span></td>
 			                    <td class="p-3 space-y-0.5">${barangListHTML}</td>
 			                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badge}">${req.status}</span></td>
 			                    <td class="p-3 text-center">${tombolAksi}</td>
