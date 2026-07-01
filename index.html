@@ -761,13 +761,9 @@
 			//     }
 			// }
 			async function loadPermintaanData() {
-			    console.log("Fungsi loadPermintaanData dipanggil!");
 				try {
-			        if (!currentUser) {
-						console.log("currentUser tidak ditemukan, fungsi berhenti.");
-						return;
-					}
-			
+			        if (!currentUser) return;
+							
 			        const userRole = (currentUser.role || '').toLowerCase();
 			        // PERBAIKAN: Deteksi jika role bernilai 'admin' ATAU 'operator'
 			        const isAdminOrOperator = userRole === 'admin' || userRole === 'operator';
@@ -820,6 +816,9 @@
 
 						console.log("User ID:", currentUser.id);
 						console.log("Assigned Room IDs:", assignedRoomIds);
+
+						let data = [];
+						let error = null;
 			
 			            if (assignedRoomIds.length > 0) {
 			                let { data, error } = await _supabase
@@ -830,7 +829,7 @@
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
 			                    .in('status', ['Diproses', 'Selesai'])
-			                    .in('ruangan', assignedRoomIds)
+			                    .in('ruangan_tujuan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
 			                if (error) {
@@ -842,7 +841,7 @@
 			                mainData = [];
 			            }
 
-						console.log("Hasil Data Permintaan:", data);
+						console.log("Hasil Data Permintaan:", mainData);
 						console.log("Error Supabase:", error);
 			
 			        } else if (userRole === 'subbagian') {
