@@ -241,42 +241,135 @@
 
 			let currentUser = null;
 			let currentCart = []; // Penampung keranjang belanja sementara
+
+			// A. GANTI FUNGSI AMBILDATAPROFILEUSER MENJADI SEPERTI INI:
+			async function AmbilDataProfileUser(userId) {
+			    try {
+			        if (!userId) return;
+			
+			        // Ambil data profil dari users_view menggunakan ID yang dilempar saat login
+			        const { data: profileData, error: profileError } = await _supabase
+			            .from('users_view') 
+			            .select('id, username, role, subbagian_id, nama_lengkap')
+			            .eq('id', userId)
+			            .single();
+			
+			        if (profileError) throw profileError;
+			
+			        currentUser = profileData;
+			        console.log("User berhasil dimuat:", currentUser);
+			
+			        // Update Tampilan Nama & Role di Header Dashboard
+			        const userDisplay = document.getElementById('user-display');
+			        if (userDisplay) {
+			            userDisplay.innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
+			        }
+			
+			        // Jalankan pemuatan data tabel setelah profile user berhasil didapatkan
+			        if (typeof loadPermintaanData === 'function') {
+			            loadPermintaanData();
+			        }
+			
+			    } catch (err) {
+			        console.error("Error pada AmbilDataProfileUser:", err.message);
+			    }
+			}
+			
+			// B. PERBAIKI JUGA LOGIKA DOMCONTENTLOADED (Agar otomatis login kembali saat refresh)
+			document.addEventListener('DOMContentLoaded', () => {
+			    const savedUserId = localStorage.getItem('userId');
+			    if (savedUserId) {
+			        // Tampilkan halaman utama jika session ID ditemukan
+			        document.getElementById('login-page').classList.add('hidden');
+			        document.getElementById('main-system').classList.remove('hidden');
+			        
+			        // Muat profil dan jalankan semua fungsi awal
+			        AmbilDataProfileUser(savedUserId).then(() => {
+			            if (currentUser) {
+			                applyRolePermissions(currentUser.role);
+			                loadDashboardData();
+			                populateBarangDropdown();
+			                populateRuanganDropdown();
+			            }
+			        });
+			    }
+			});
+			
+			// C. SESUAIKAN handleLogin AGAR MENYIMPAN ID KE LOCALSTORAGE
+			async function handleLogin(e) {
+			    e.preventDefault();
+			    const user = document.getElementById('login-username').value;
+			    const pass = document.getElementById('login-password').value;
+			    
+			    const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
+			    
+			    if (data && data.password_plain === pass) { 
+			        // Simpan ID User ke localStorage sebagai penanda sesi login aktif
+			        localStorage.setItem('userId', data.id);
+			        
+			        await AmbilDataProfileUser(data.id);
+			        
+			        if (!currentUser) {
+			            currentUser = data;
+			        }
+			
+			        document.getElementById('login-page').classList.add('hidden');
+			        document.getElementById('main-system').classList.remove('hidden');
+			        
+			        applyRolePermissions(currentUser.role);
+			        switchTab('dashboard');
+			        loadDashboardData();
+			        populateBarangDropdown();
+			        populateRuanganDropdown();
+			    } else {
+			        alert('Kegagalan Autentikasi! Username atau Password Salah.');
+			    }
+			}
+			
+			// D. SESUAIKAN handleLogout AGAR MENGHAPUS LOCALSTORAGE
+			function handleLogout() {
+			    localStorage.removeItem('userId'); // Hapus token sesi id
+			    currentUser = null;
+			    document.getElementById('main-system').classList.add('hidden');
+			    document.getElementById('login-page').classList.remove('hidden');
+			    document.getElementById('form-login').reset();
+			}
 			
 			// 2. LOGIKA AUTENTIKASI DAN JALUR LOGIN
-			async function handleLogin(e) {
-				e.preventDefault();
-				const user = document.getElementById('login-username').value;
-				const pass = document.getElementById('login-password').value;
+			// async function handleLogin(e) {
+			// 	e.preventDefault();
+			// 	const user = document.getElementById('login-username').value;
+			// 	const pass = document.getElementById('login-password').value;
 				
-				// A. Ambil data autentikasi dasar dari view users
-				const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
+			// 	// A. Ambil data autentikasi dasar dari view users
+			// 	const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
 				
-				if (data && data.password_plain === pass) { 
+			// 	if (data && data.password_plain === pass) { 
 					
-					// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
-					await AmbilDataProfileUser(data.id);
+			// 		// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
+			// 		await AmbilDataProfileUser(data.id);
 					
-					// Fallback jika data tabel users utama bermasalah, gunakan data view
-					if (!currentUser) {
-						currentUser = data;
-					}
+			// 		// Fallback jika data tabel users utama bermasalah, gunakan data view
+			// 		if (!currentUser) {
+			// 			currentUser = data;
+			// 		}
 
-					// B. Tampilkan Halaman Utama System
-					document.getElementById('login-page').classList.add('hidden');
-					document.getElementById('main-system').classList.remove('hidden');
-					document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
+			// 		// B. Tampilkan Halaman Utama System
+			// 		document.getElementById('login-page').classList.add('hidden');
+			// 		document.getElementById('main-system').classList.remove('hidden');
+			// 		document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
 					
-					// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
-					applyRolePermissions(currentUser.role);
-					switchTab('dashboard');
-					loadDashboardData();
-					populateBarangDropdown();
-					populateRuanganDropdown();
-					loadPermintaanData();
-				} else {
-					alert('Kegagalan Autentikasi! Username atau Password Salah.');
-				}
-			}
+			// 		// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
+			// 		applyRolePermissions(currentUser.role);
+			// 		switchTab('dashboard');
+			// 		loadDashboardData();
+			// 		populateBarangDropdown();
+			// 		populateRuanganDropdown();
+			// 		loadPermintaanData();
+			// 	} else {
+			// 		alert('Kegagalan Autentikasi! Username atau Password Salah.');
+			// 	}
+			// }
 
 			// 3. FUNGSI MENARIK DETAIL RELASI USER (SUBBAGIAN & RUANGAN TUGAS)
 			// async function AmbilDataProfileUser(userId) {
@@ -313,55 +406,55 @@
 			// Pastikan variabel currentUser dideklarasikan secara global di paling atas file script Anda
 			// let currentUser = null; 
 			
-			async function AmbilDataProfileUser() {
-			    try {
-			        // 1. Ambil user ID yang sedang aktif dari Auth Supabase
-			        const { data: { user }, error: authError } = await _supabase.auth.getUser();
+			// async function AmbilDataProfileUser() {
+			//     try {
+			//         // 1. Ambil user ID yang sedang aktif dari Auth Supabase
+			//         const { data: { user }, error: authError } = await _supabase.auth.getUser();
 			        
-			        if (authError) throw authError;
+			//         if (authError) throw authError;
 			
-			        if (!user) {
-			            console.warn("Tidak ada pengguna yang login. Mengalihkan ke halaman login...");
-			            window.location.href = "login.html"; // Sesuaikan dengan nama halaman login Anda
-			            return;
-			        }
+			//         if (!user) {
+			//             console.warn("Tidak ada pengguna yang login. Mengalihkan ke halaman login...");
+			//             window.location.href = "login.html"; // Sesuaikan dengan nama halaman login Anda
+			//             return;
+			//         }
 			
-			        // 2. Ambil data detail (Role, Subbagian, dll) dari tabel profil Anda
-			        // ⚠️ PERHATIKAN: Ganti 'users' dengan nama tabel profile Anda jika berbeda (misal: 'profiles')
-			        const { data: profileData, error: profileError } = await _supabase
-			            .from('users_view') 
-			            .select('id, username, role, subbagian_id') // ⚠️ Pastikan nama kolom sesuai di database
-			            .eq('id', user.id)
-			            .single(); // .single() digunakan karena kita hanya mengambil 1 data user
+			//         // 2. Ambil data detail (Role, Subbagian, dll) dari tabel profil Anda
+			//         // ⚠️ PERHATIKAN: Ganti 'users' dengan nama tabel profile Anda jika berbeda (misal: 'profiles')
+			//         const { data: profileData, error: profileError } = await _supabase
+			//             .from('users_view') 
+			//             .select('id, username, role, subbagian_id') // ⚠️ Pastikan nama kolom sesuai di database
+			//             .eq('id', user.id)
+			//             .single(); // .single() digunakan karena kita hanya mengambil 1 data user
 			
-			        if (profileError) throw profileError;
+			//         if (profileError) throw profileError;
 			
-			        // 3. Simpan data ke variabel global agar bisa diakses oleh fungsi loadPermintaanData()
-			        currentUser = profileData;
-			        console.log("User berhasil dimuat:", currentUser);
+			//         // 3. Simpan data ke variabel global agar bisa diakses oleh fungsi loadPermintaanData()
+			//         currentUser = profileData;
+			//         console.log("User berhasil dimuat:", currentUser);
 			
-			        // 4. [Opsional] Update Tampilan Nama & Role di Header/Sidebar Dashboard
-			        const namaUserEl = document.getElementById('user-name'); // Sesuaikan ID elemen HTML Anda
-			        const roleUserEl = document.getElementById('user-role'); // Sesuaikan ID elemen HTML Anda
+			//         // 4. [Opsional] Update Tampilan Nama & Role di Header/Sidebar Dashboard
+			//         const namaUserEl = document.getElementById('user-name'); // Sesuaikan ID elemen HTML Anda
+			//         const roleUserEl = document.getElementById('user-role'); // Sesuaikan ID elemen HTML Anda
 			        
-			        if (namaUserEl) namaUserEl.innerText = currentUser.username || user.email;
-			        if (roleUserEl) roleUserEl.innerText = (currentUser.role || '').toUpperCase();
+			//         if (namaUserEl) namaUserEl.innerText = currentUser.username || user.email;
+			//         if (roleUserEl) roleUserEl.innerText = (currentUser.role || '').toUpperCase();
 			
-			        // 5. PENTING: Jalankan pemuatan data tabel SETELAH profile user berhasil didapatkan
-			        if (typeof loadPermintaanData === 'function') {
-			            loadPermintaanData();
-			        }
+			//         // 5. PENTING: Jalankan pemuatan data tabel SETELAH profile user berhasil didapatkan
+			//         if (typeof loadPermintaanData === 'function') {
+			//             loadPermintaanData();
+			//         }
 			
-			    } catch (err) {
-			        console.error("Error pada AmbilDataProfileUser:", err.message);
-			        alert("Gagal memuat profil pengguna: " + err.message);
-			    }
-			}
+			//     } catch (err) {
+			//         console.error("Error pada AmbilDataProfileUser:", err.message);
+			//         alert("Gagal memuat profil pengguna: " + err.message);
+			//     }
+			// }
 
-			// Jalankan fungsi ini saat halaman selesai dimuat (DOM Ready)
-			document.addEventListener('DOMContentLoaded', () => {
-			    AmbilDataProfileUser();
-			});
+			// // Jalankan fungsi ini saat halaman selesai dimuat (DOM Ready)
+			// document.addEventListener('DOMContentLoaded', () => {
+			//     AmbilDataProfileUser();
+			// });
 						
 			// 4. HAK AKSES MENU SIDEBAR (ROLE-BASED ACCESS CONTROL)
 			function applyRolePermissions(role) {
@@ -565,7 +658,7 @@
 			            .insert([{ 
 							user_id: currentUser.id, 
 						    subbagian: currentUser.subbagian_id, // Pastikan baris ini di-insert agar terbaca di riwayat kelompok
-						    ruangan_tujuan: ruanganTujuanValue, 
+						    ruangan_tujuan: cleanRuanganId, 
 						    status: 'Pending'
 			                // user_id: userId, 
 			                // subbagian: userSubbagian, 
@@ -825,65 +918,118 @@
 			//         alert("Gagal menolak: " + err.message);
 			//     }
 			// }
-			
+
 			
 			// --- AKSI UNTUK ROLE PRAMU (UPDATE STOK BARANG) ---
 			async function selesaikanPermintaanOlehPramu(id) {
-			    if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
+		    if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
+		    
+		    try {
+		        const { data: details, error: fetchError } = await _supabase
+		            .from('permintaan_detail')
+		            .select('barang_id, jumlah')
+		            .eq('permintaan_id', id);
+		
+		        if (fetchError) throw fetchError;
+		
+		        for (const item of details) {
+		            // 🌟 PERBAIKAN: select('stok_sekarang') bukan 'stok'
+		            const { data: barangItem, error: barangError } = await _supabase
+		                .from('barang')
+		                .select('stok_sekarang')
+		                .eq('id', item.barang_id)
+		                .single();
+		
+		            if (barangError) throw barangError;
+		
+		            // 🌟 PERBAIKAN: membaca barangItem.stok_sekarang
+		            const stokAktual = barangItem.stok_sekarang || 0;
+		            const stokBaru = stokAktual - item.jumlah;
+		
+		            if (stokBaru < 0) {
+		                alert(`⚠️ Perhatian: Stok salah satu barang tidak mencukupi (Stok saat ini: ${stokAktual}). Pemotongan tetap dilanjutkan.`);
+		            }
+		
+		            // 🌟 PERBAIKAN: update kolom stok_sekarang
+		            const { error: updateStokError } = await _supabase
+		                .from('barang')
+		                .update({ stok_sekarang: stokBaru })
+		                .eq('id', item.barang_id);
+		
+		            if (updateStokError) throw updateStokError;
+		        }
+		
+		        const { error: updateStatusError } = await _supabase
+		            .from('permintaan')
+		            .update({ status: 'Selesai' })
+		            .eq('id', id);
+		
+		        if (updateStatusError) throw updateStatusError;
+		
+		        alert("Permintaan berhasil diselesaikan dan stok barang telah diperbarui!");
+		        loadPermintaanData(); 
+		
+		    } catch (err) {
+		        console.error(err);
+		        alert("Gagal menyelesaikan permintaan: " + err.message);
+		    }
+		}
+			// async function selesaikanPermintaanOlehPramu(id) {
+			//     if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
 			    
-			    try {
-			        // 1. Ambil detail barang dari permintaan ini untuk tahu jumlah yang diminta
-			        const { data: details, error: fetchError } = await _supabase
-			            .from('permintaan_detail')
-			            .select('barang_id, jumlah')
-			            .eq('permintaan_id', id);
+			//     try {
+			//         // 1. Ambil detail barang dari permintaan ini untuk tahu jumlah yang diminta
+			//         const { data: details, error: fetchError } = await _supabase
+			//             .from('permintaan_detail')
+			//             .select('barang_id, jumlah')
+			//             .eq('permintaan_id', id);
 			
-			        if (fetchError) throw fetchError;
+			//         if (fetchError) throw fetchError;
 			
-			        // 2. Loop setiap item barang untuk dikurangi stoknya di tabel 'barang'
-			        for (const item of details) {
-			            // Ambil jumlah stok saat ini dari database
-			            const { data: barangItem, error: barangError } = await _supabase
-			                .from('barang')
-			                .select('stok')
-			                .eq('id', item.barang_id)
-			                .single();
+			//         // 2. Loop setiap item barang untuk dikurangi stoknya di tabel 'barang'
+			//         for (const item of details) {
+			//             // Ambil jumlah stok saat ini dari database
+			//             const { data: barangItem, error: barangError } = await _supabase
+			//                 .from('barang')
+			//                 .select('stok')
+			//                 .eq('id', item.barang_id)
+			//                 .single();
 			
-			            if (barangError) throw barangError;
+			//             if (barangError) throw barangError;
 			
-			            // Hitung sisa stok baru
-			            const stokSekarang = barangItem.stok || 0;
-			            const stokBaru = stokSekarang - item.jumlah;
+			//             // Hitung sisa stok baru
+			//             const stokSekarang = barangItem.stok || 0;
+			//             const stokBaru = stokSekarang - item.jumlah;
 			
-			            if (stokBaru < 0) {
-			                alert(`⚠️ Perhatian: Stok salah satu barang tidak mencukupi (Stok saat ini: ${stokSekarang}). Pemotongan tetap dilanjutkan.`);
-			            }
+			//             if (stokBaru < 0) {
+			//                 alert(`⚠️ Perhatian: Stok salah satu barang tidak mencukupi (Stok saat ini: ${stokSekarang}). Pemotongan tetap dilanjutkan.`);
+			//             }
 			
-			            // Update stok baru ke tabel barang
-			            const { error: updateStokError } = await _supabase
-			                .from('barang')
-			                .update({ stok: stokBaru })
-			                .eq('id', item.barang_id);
+			//             // Update stok baru ke tabel barang
+			//             const { error: updateStokError } = await _supabase
+			//                 .from('barang')
+			//                 .update({ stok: stokBaru })
+			//                 .eq('id', item.barang_id);
 			
-			            if (updateStokError) throw updateStokError;
-			        }
+			//             if (updateStokError) throw updateStokError;
+			//         }
 			
-			        // 3. Update status utama permintaan menjadi 'Selesai'
-			        const { error: updateStatusError } = await _supabase
-			            .from('permintaan')
-			            .update({ status: 'Selesai' })
-			            .eq('id', id);
+			//         // 3. Update status utama permintaan menjadi 'Selesai'
+			//         const { error: updateStatusError } = await _supabase
+			//             .from('permintaan')
+			//             .update({ status: 'Selesai' })
+			//             .eq('id', id);
 			
-			        if (updateStatusError) throw updateStatusError;
+			//         if (updateStatusError) throw updateStatusError;
 			
-			        alert("Permintaan berhasil diselesaikan dan stok barang telah diperbarui!");
-			        loadPermintaanData(); // Refresh isi tabel
+			//         alert("Permintaan berhasil diselesaikan dan stok barang telah diperbarui!");
+			//         loadPermintaanData(); // Refresh isi tabel
 			
-			    } catch (err) {
-			        console.error(err);
-			        alert("Gagal menyelesaikan permintaan: " + err.message);
-			    }
-			}
+			//     } catch (err) {
+			//         console.error(err);
+			//         alert("Gagal menyelesaikan permintaan: " + err.message);
+			//     }
+			// }
 			
 			// // 12. PROSES UPDATE POTONG STOK OTOMATIS SAAT APPROVE
 			// async function approveTransaksi(permintaanId) {
