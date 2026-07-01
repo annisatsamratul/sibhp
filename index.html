@@ -818,7 +818,7 @@
 						console.log("Assigned Room IDs:", assignedRoomIds);
 			
 			            if (assignedRoomIds.length > 0) {
-			                let { data, error } = await _supabase
+			                const { data, error } = await _supabase
 			                    .from('permintaan')
 			                    .select(`
 			                        id, created_at, status, ruangan_tujuan, user_id, subbagian,
@@ -838,8 +838,7 @@
 			                mainData = [];
 			            }
 
-						console.log("Hasil Data Permintaan:", data);
-						console.log("Error Supabase:", error);
+						console.log("Hasil Data Permintaan:", mainData);
 			
 			        } else if (userRole === 'subbagian') {
 			            // 3. SUBBAGIAN: Menggunakan 'subbagian' (ID kelompok subbagian) agar semua permintaan 
