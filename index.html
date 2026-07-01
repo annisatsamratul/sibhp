@@ -826,7 +826,7 @@
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
 			                    .in('status', ['Diproses', 'Selesai'])
-			                    .in('ruangan_tujuan', assignedRoomIds)
+			                    .in('ruangan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
 			                if (error) {
