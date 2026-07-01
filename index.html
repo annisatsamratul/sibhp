@@ -826,7 +826,7 @@
 			                    	subbagian_rel:subbagian ( nama_subbagian ),
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
-			                    .in('status', ['Diproses', 'Selesai'])
+			                    .in('status', ['Pending', 'Diproses', 'Selesai'])
 			                    .in('ruangan_tujuan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
