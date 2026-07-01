@@ -810,22 +810,12 @@
 			                .from('user_ruangan')
 			                .select('ruangan_id')
 			                .eq('user_id', currentUser.id);
-
-						console.log("Data Ruangan dari Supabase:", userRooms); // Cek ini dulu!
-    
-					    if (roomError) {
-					        console.error("Error saat ambil ruangan:", roomError);
-					        return;
-					    }
 			
-			            // if (roomError) throw roomError;
+			            if (roomError) throw roomError;
 			            const assignedRoomIds = userRooms.map(r => r.ruangan_id);
 
 						console.log("User ID:", currentUser.id);
 						console.log("Assigned Room IDs:", assignedRoomIds);
-
-						// let data = [];
-						// let error = null;
 			
 			            if (assignedRoomIds.length > 0) {
 			                let { data, error } = await _supabase
@@ -836,7 +826,7 @@
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
 			                    .in('status', ['Diproses', 'Selesai'])
-			                    .in('ruangan_tujuan', assignedRoomIds)
+			                    .in('ruangan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
 			                if (error) {
@@ -845,11 +835,10 @@
 							}
 			                mainData = data;
 			            } else {
-			                // mainData = [];
-							console.warn("Pramu tidak memiliki ruangan yang di-assign!");
+			                mainData = [];
 			            }
 
-						console.log("Hasil Data Permintaan:", mainData);
+						console.log("Hasil Data Permintaan:", data);
 						console.log("Error Supabase:", error);
 			
 			        } else if (userRole === 'subbagian') {
