@@ -282,7 +282,7 @@
 			async function AmbilDataProfileUser() {
 			    try {
 					const { data, error } = await _supabase
-						.from('users_view)
+						.from('users_view')
 						.select(`
 							id,
 							role,
