@@ -726,24 +726,29 @@
 			
 			        // LOGIKA FILTER BERDASARKAN ROLE
 			        if (userRole === 'admin' || userRole === 'operator') {
-			            // Admin bisa melihat SEMUA data tanpa filter subbagian
-			        } else if (userRole === 'subbagian') {
-			            // Filter hanya untuk subbagian user yang sedang login
-			            query = query.eq('subbagian', currentUser.subbagian_id);
-			        } else if (userRole === 'pramu') {
-			            // Ambil ruangan yang di-assign ke pramu
-			            const { data: userRooms } = await _supabase
-			                .from('user_ruangan')
-			                .select('ruangan_id')
-			                .eq('user_id', currentUser.id);
-			                
-			            const roomIds = (userRooms || []).map(r => r.ruangan_id);
-			            if (roomIds.length > 0) {
-			                query = query.in('ruangan_tujuan', roomIds);
-			            } else {
-			                query = query.eq('id', -1); // Tidak tampilkan apa-apa jika belum di-assign
-			            }
-			        }
+					    // Admin tidak perlu filter subbagian, biarkan kueri mengambil semua
+					} else if (userRole === 'subbagian') {
+					    // Pastikan currentUser.subbagian_id ada nilainya
+					    if (currentUser.subbagian_id) {
+					        query = query.eq('subbagian', Number(currentUser.subbagian_id));
+					    } else {
+					        query = query.eq('id', -1); // Paksa kosong jika subbagian tidak terdefinisi
+					    }
+					} else if (userRole === 'pramu') {
+					    // Ambil daftar ruangan yang di-assign ke pramu
+					    const { data: userRooms } = await _supabase
+					        .from('user_ruangan')
+					        .select('ruangan_id')
+					        .eq('user_id', Number(currentUser.id));
+					        
+					    const roomIds = (userRooms || []).map(r => Number(r.ruangan_id));
+					    
+					    if (roomIds.length > 0) {
+					        query = query.in('ruangan_tujuan', roomIds);
+					    } else {
+					        query = query.eq('id', -1); 
+					    }
+					}
 			
 			        const { data, error } = await query;
 			        if (error) throw error;
