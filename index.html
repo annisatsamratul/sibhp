@@ -758,7 +758,7 @@
 			                .eq('user_id', currentUser.id);
 			
 			            if (roomError) throw roomError;
-			            const assignedRoomIds = userRooms.map(r => Number(r.ruangan_id));
+			            const assignedRoomIds = userRooms.map(r => parseInt(r.ruangan_id));
 			
 			            if (assignedRoomIds.length > 0) {
 			                let { data, error } = await _supabase
@@ -773,7 +773,10 @@
 			                    .in('ruangan_tujuan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
-			                if (error) throw error;
+			                if (error) {
+								console.error("Error Query:", error);
+								throw error;
+							}
 			                mainData = data;
 			            } else {
 			                mainData = [];
