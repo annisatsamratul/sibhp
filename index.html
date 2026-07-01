@@ -813,6 +813,9 @@
 			
 			            if (roomError) throw roomError;
 			            const assignedRoomIds = userRooms.map(r => Number(r.ruangan_id));
+
+						console.log("User ID:", currentUser.id);
+						console.log("Assigned Room IDs:", assignedRoomIds);
 			
 			            if (assignedRoomIds.length > 0) {
 			                let { data, error } = await _supabase
@@ -835,6 +838,9 @@
 			            } else {
 			                mainData = [];
 			            }
+
+						console.log("Hasil Data Permintaan:", data);
+						console.log("Error Supabase:", error);
 			
 			        } else if (userRole === 'subbagian') {
 			            // 3. SUBBAGIAN: Menggunakan 'subbagian' (ID kelompok subbagian) agar semua permintaan 
