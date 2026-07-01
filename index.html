@@ -795,7 +795,7 @@
 			                .from('permintaan')
 			                .select(`
 			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                    ruangan ( nama_ruangan ),
+			                    ruangan:ruangan!ruangan_tujuan ( nama_ruangan ),
 			                    subbagian_rel:subbagian ( nama_subbagian ),
 			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                `)
@@ -819,7 +819,7 @@
 			                    .from('permintaan')
 			                    .select(`
 			                        id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                        ruangan ( nama_ruangan ),
+			                        ruangan:ruangan!ruangan_tujuan ( nama_ruangan ),
 			                        subbagian_rel:subbagian ( nama_subbagian ),
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
@@ -843,7 +843,7 @@
 			                .from('permintaan')
 			                .select(`
 			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                    ruangan ( nama_ruangan ),
+			                    ruangan:ruangan!ruangan_tujuan ( nama_ruangan ),
 			                    subbagian_rel:subbagian ( nama_subbagian ),
 			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                `)
