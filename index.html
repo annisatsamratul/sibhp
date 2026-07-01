@@ -866,7 +866,7 @@
 			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
 			            
 			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || 'Tanpa Nama') : `ID #${req.ruangan_tujuan}`;
-			            const namaSubbagianTeks = req.subbagian_rel ? (req.subbagian_rel.nama_subbagian || 'Tanpa Subbagian');
+			            const namaSubbagianTeks = req.subbagian_rel ? (req.subbagian_rel.nama_subbagian || 'Tanpa Subbagian') : `${req.subbagian}`;
 			
 			            const detailList = req.permintaan_detail || [];
 			            const barangListHTML = detailList.map(d => `
