@@ -812,7 +812,7 @@
 			                .eq('user_id', currentUser.id);
 			
 			            if (roomError) throw roomError;
-			            const assignedRoomIds = userRooms.map(r => Number(r.ruangan_id));
+			            const assignedRoomIds = userRooms.map(r => r.ruangan_id);
 
 						console.log("User ID:", currentUser.id);
 						console.log("Assigned Room IDs:", assignedRoomIds);
@@ -823,10 +823,9 @@
 			                    .select(`
 			                        id, created_at, status, ruangan_tujuan, user_id, subbagian,
 			                        ruangan:ruangan!ruangan_tujuan ( nama_ruangan ),
-			                        subbagian_rel:subbagian ( nama_subbagian ),
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
-			                    .in('status', ['Diproses', 'Selesai'])
+			                    // .in('status', ['Diproses', 'Selesai'])
 			                    .in('ruangan_tujuan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
