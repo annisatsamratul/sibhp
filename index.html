@@ -336,40 +336,40 @@
 			}
 			
 			// 2. LOGIKA AUTENTIKASI DAN JALUR LOGIN
-			// async function handleLogin(e) {
-			// 	e.preventDefault();
-			// 	const user = document.getElementById('login-username').value;
-			// 	const pass = document.getElementById('login-password').value;
+			async function handleLogin(e) {
+				e.preventDefault();
+				const user = document.getElementById('login-username').value;
+				const pass = document.getElementById('login-password').value;
 				
-			// 	// A. Ambil data autentikasi dasar dari view users
-			// 	const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
+				// A. Ambil data autentikasi dasar dari view users
+				const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
 				
-			// 	if (data && data.password_plain === pass) { 
+				if (data && data.password_plain === pass) { 
 					
-			// 		// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
-			// 		await AmbilDataProfileUser(data.id);
+					// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
+					await AmbilDataProfileUser(data.id);
 					
-			// 		// Fallback jika data tabel users utama bermasalah, gunakan data view
-			// 		if (!currentUser) {
-			// 			currentUser = data;
-			// 		}
+					// Fallback jika data tabel users utama bermasalah, gunakan data view
+					if (!currentUser) {
+						currentUser = data;
+					}
 
-			// 		// B. Tampilkan Halaman Utama System
-			// 		document.getElementById('login-page').classList.add('hidden');
-			// 		document.getElementById('main-system').classList.remove('hidden');
-			// 		document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
+					// B. Tampilkan Halaman Utama System
+					document.getElementById('login-page').classList.add('hidden');
+					document.getElementById('main-system').classList.remove('hidden');
+					document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
 					
-			// 		// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
-			// 		applyRolePermissions(currentUser.role);
-			// 		switchTab('dashboard');
-			// 		loadDashboardData();
-			// 		populateBarangDropdown();
-			// 		populateRuanganDropdown();
-			// 		loadPermintaanData();
-			// 	} else {
-			// 		alert('Kegagalan Autentikasi! Username atau Password Salah.');
-			// 	}
-			// }
+					// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
+					applyRolePermissions(currentUser.role);
+					switchTab('dashboard');
+					loadDashboardData();
+					populateBarangDropdown();
+					populateRuanganDropdown();
+					loadPermintaanData();
+				} else {
+					alert('Kegagalan Autentikasi! Username atau Password Salah.');
+				}
+			}
 
 			// 3. FUNGSI MENARIK DETAIL RELASI USER (SUBBAGIAN & RUANGAN TUGAS)
 			// async function AmbilDataProfileUser(userId) {
