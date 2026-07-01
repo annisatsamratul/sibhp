@@ -336,40 +336,40 @@
 			}
 			
 			// 2. LOGIKA AUTENTIKASI DAN JALUR LOGIN
-			async function handleLogin(e) {
-				e.preventDefault();
-				const user = document.getElementById('login-username').value;
-				const pass = document.getElementById('login-password').value;
+			// async function handleLogin(e) {
+			// 	e.preventDefault();
+			// 	const user = document.getElementById('login-username').value;
+			// 	const pass = document.getElementById('login-password').value;
 				
-				// A. Ambil data autentikasi dasar dari view users
-				const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
+			// 	// A. Ambil data autentikasi dasar dari view users
+			// 	const { data, error } = await _supabase.from('users_view').select('*').eq('username', user).single();
 				
-				if (data && data.password_plain === pass) { 
+			// 	if (data && data.password_plain === pass) { 
 					
-					// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
-					await AmbilDataProfileUser(data.id);
+			// 		// 🌟 PERBAIKAN URUTAN: Panggil profile relasi agar data 'subbagian' dan 'ruangan_tugas' milik pramu termuat!
+			// 		await AmbilDataProfileUser(data.id);
 					
-					// Fallback jika data tabel users utama bermasalah, gunakan data view
-					if (!currentUser) {
-						currentUser = data;
-					}
+			// 		// Fallback jika data tabel users utama bermasalah, gunakan data view
+			// 		if (!currentUser) {
+			// 			currentUser = data;
+			// 		}
 
-					// B. Tampilkan Halaman Utama System
-					document.getElementById('login-page').classList.add('hidden');
-					document.getElementById('main-system').classList.remove('hidden');
-					document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
+			// 		// B. Tampilkan Halaman Utama System
+			// 		document.getElementById('login-page').classList.add('hidden');
+			// 		document.getElementById('main-system').classList.remove('hidden');
+			// 		document.getElementById('user-display').innerText = `${currentUser.nama_lengkap} (${currentUser.role.toUpperCase()})`;
 					
-					// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
-					applyRolePermissions(currentUser.role);
-					switchTab('dashboard');
-					loadDashboardData();
-					populateBarangDropdown();
-					populateRuanganDropdown();
-					loadPermintaanData();
-				} else {
-					alert('Kegagalan Autentikasi! Username atau Password Salah.');
-				}
-			}
+			// 		// C. Jalankan Hak Akses & Muat Seluruh Data Dropdown/Tabel
+			// 		applyRolePermissions(currentUser.role);
+			// 		switchTab('dashboard');
+			// 		loadDashboardData();
+			// 		populateBarangDropdown();
+			// 		populateRuanganDropdown();
+			// 		loadPermintaanData();
+			// 	} else {
+			// 		alert('Kegagalan Autentikasi! Username atau Password Salah.');
+			// 	}
+			// }
 
 			// 3. FUNGSI MENARIK DETAIL RELASI USER (SUBBAGIAN & RUANGAN TUGAS)
 			// async function AmbilDataProfileUser(userId) {
@@ -706,217 +706,217 @@
 			}
 			
 			// 11. BACA DATA RIWAYAT PERMINTAAN (DENGAN FILTER SUBBAGIAN)
-			async function loadPermintaanData() {
-			    try {
-			        if (!currentUser) return;
-			        const userRole = (currentUser.role || '').toLowerCase();
-			        const tbody = document.getElementById('table-permintaan-body');
-			        if (!tbody) return;
-			        tbody.innerHTML = '';
-			
-			        let query = _supabase
-			            .from('permintaan')
-			            .select(`
-			                id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                ruangan ( nama_ruangan ),
-			                subbagian_rel:subbagian ( nama_subbagian ),
-			                permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
-			            `)
-			            .order('created_at', { ascending: false });
-			
-			        // LOGIKA FILTER BERDASARKAN ROLE
-			        if (userRole === 'admin' || userRole === 'operator') {
-					    // Admin tidak perlu filter subbagian, biarkan kueri mengambil semua
-					} else if (userRole === 'subbagian') {
-					    // Pastikan currentUser.subbagian_id ada nilainya
-					    if (currentUser.subbagian_id) {
-					        query = query.eq('subbagian', Number(currentUser.subbagian_id));
-					    } else {
-					        query = query.eq('id', -1); // Paksa kosong jika subbagian tidak terdefinisi
-					    }
-					} else if (userRole === 'pramu') {
-					    // Ambil daftar ruangan yang di-assign ke pramu
-					    const { data: userRooms } = await _supabase
-					        .from('user_ruangan')
-					        .select('ruangan_id')
-					        .eq('user_id', Number(currentUser.id));
-					        
-					    const roomIds = (userRooms || []).map(r => Number(r.ruangan_id));
-					    
-					    if (roomIds.length > 0) {
-					        query = query.in('ruangan_tujuan', roomIds);
-					    } else {
-					        query = query.eq('id', -1); 
-					    }
-					}
-			
-			        const { data, error } = await query;
-			        if (error) throw error;
-			
-			        // Render data ke tabel...
-			        renderCartTable(data); 
-			
-			    } catch (err) {
-			        console.error("Error memuat data:", err);
-			    }
-			}
 			// async function loadPermintaanData() {
 			//     try {
 			//         if (!currentUser) return;
-			
 			//         const userRole = (currentUser.role || '').toLowerCase();
-			//         // PERBAIKAN: Deteksi jika role bernilai 'admin' ATAU 'operator'
-			//         const isAdminOrOperator = userRole === 'admin' || userRole === 'operator';
-			        
 			//         const tbody = document.getElementById('table-permintaan-body');
-			//         const thAksi = document.getElementById('th-aksi'); // Pastikan tag <th>Aksi</th> memiliki id="th-aksi"
-			        
 			//         if (!tbody) return;
 			//         tbody.innerHTML = '';
 			
-			//         // Atur visibilitas header KOLOM AKSI
-			//         if (thAksi) {
-			//             if (userRole === 'subbagian') {
-			//                 thAksi.classList.add('hidden'); // Sembunyikan kolom aksi jika dia subbagian
-			//             } else {
-			//                 thAksi.classList.remove('hidden');
-			//             }
-			//         }
+			//         let query = _supabase
+			//             .from('permintaan')
+			//             .select(`
+			//                 id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			//                 ruangan ( nama_ruangan ),
+			//                 subbagian_rel:subbagian ( nama_subbagian ),
+			//                 permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			//             `)
+			//             .order('created_at', { ascending: false });
 			
-			//         let mainData = [];
+			//         // LOGIKA FILTER BERDASARKAN ROLE
+			//         if (userRole === 'admin' || userRole === 'operator') {
+			// 		    // Admin tidak perlu filter subbagian, biarkan kueri mengambil semua
+			// 		} else if (userRole === 'subbagian') {
+			// 		    // Pastikan currentUser.subbagian_id ada nilainya
+			// 		    if (currentUser.subbagian_id) {
+			// 		        query = query.eq('subbagian', Number(currentUser.subbagian_id));
+			// 		    } else {
+			// 		        query = query.eq('id', -1); // Paksa kosong jika subbagian tidak terdefinisi
+			// 		    }
+			// 		} else if (userRole === 'pramu') {
+			// 		    // Ambil daftar ruangan yang di-assign ke pramu
+			// 		    const { data: userRooms } = await _supabase
+			// 		        .from('user_ruangan')
+			// 		        .select('ruangan_id')
+			// 		        .eq('user_id', Number(currentUser.id));
+					        
+			// 		    const roomIds = (userRooms || []).map(r => Number(r.ruangan_id));
+					    
+			// 		    if (roomIds.length > 0) {
+			// 		        query = query.in('ruangan_tujuan', roomIds);
+			// 		    } else {
+			// 		        query = query.eq('id', -1); 
+			// 		    }
+			// 		}
 			
-			//         // ==========================================
-			//         // LOGIKA FILTER QUERY BERDASARKAN ROLE
-			//         // ==========================================
-			        
-			//         if (isAdminOrOperator) {
-			//             // 1. ADMIN / OPERATOR: Dapat melihat seluruh data permintaan tanpa filter apa pun
-			//             let { data, error } = await _supabase
-			//                 .from('permintaan')
-			//                 .select(`
-			//                     id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			//                     ruangan:ruangan_tujuan ( nama_ruangan ),
-			//                     subbagian_rel:subbagian ( nama_subbagian ),
-			//                     permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
-			//                 `)
-			//                 .order('created_at', { ascending: false });
-			                
-			//             if (error) throw error;
-			//             mainData = data;
+			//         const { data, error } = await query;
+			//         if (error) throw error;
 			
-			//         } else if (userRole === 'pramu') {
-			//             // 2. PRAMU: Filter berdasarkan ruangan tugas pramu
-			//             const { data: userRooms, error: roomError } = await _supabase
-			//                 .from('user_ruangan')
-			//                 .select('ruangan_id')
-			//                 .eq('user_id', currentUser.id);
-			
-			//             if (roomError) throw roomError;
-			//             const assignedRoomIds = userRooms.map(r => parseInt(r.ruangan_id));
-			
-			//             if (assignedRoomIds.length > 0) {
-			//                 let { data, error } = await _supabase
-			//                     .from('permintaan')
-			//                     .select(`
-			//                         id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			//                         ruangan:ruangan_tujuan ( nama_ruangan ),
-			//                         subbagian_rel:subbagian ( nama_subbagian ),
-			//                         permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
-			//                     `)
-			//                     .in('status', ['Diproses', 'Selesai'])
-			//                     .in('ruangan_tujuan', assignedRoomIds)
-			//                     .order('created_at', { ascending: false });
-			
-			//                 if (error) {
-			// 					console.error("Error Query:", error);
-			// 					throw error;
-			// 				}
-			//                 mainData = data;
-			//             } else {
-			//                 mainData = [];
-			//             }
-			
-			//         } else if (userRole === 'subbagian') {
-			//             // 3. SUBBAGIAN: Menggunakan 'subbagian' (ID kelompok subbagian) agar semua permintaan 
-			//             // dari subbagian yang sama (misal: Umum dan Logistik) bisa saling terlihat.
-			//             let { data, error } = await _supabase
-			//                 .from('permintaan')
-			//                 .select(`
-			//                     id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			//                     ruangan:ruangan_tujuan ( nama_ruangan ),
-			//                     subbagian_rel:subbagian ( nama_subbagian ),
-			//                     permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
-			//                 `)
-			//                 .eq('subbagian', currentUser.subbagian_id) // PERBAIKAN FILTER DISINI
-			//                 .order('created_at', { ascending: false });
-			
-			//             if (error) throw error;
-			//             mainData = data;
-			//         }
-			
-			//         // ==========================================
-			//         // RENDERING DATA KE TABEL HTML
-			//         // ==========================================
-			//         mainData.forEach(req => {
-			//             const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
-			            
-			//             const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || 'Tanpa Nama') : `ID #${req.ruangan_tujuan}`;
-			//             const namaSubbagianTeks = req.subbagian_rel ? (req.subbagian_rel.nama_subbagian || 'Tanpa Subbagian') : 'Umum';
-			
-			//             const detailList = req.permintaan_detail || [];
-			//             const barangListHTML = detailList.map(d => `
-			//                 <div class="text-xs text-gray-700 font-medium">
-			//                     • ${d.barang?.nama_barang || 'Barang Dihapus'} 
-			//                     <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan || ''})</span>
-			//                 </div>
-			//             `).join('');
-			
-			//             // Atur Badge Status
-			//             let badge = "bg-gray-100 text-gray-800";
-			//             if (req.status === 'Pending') badge = "bg-amber-100 text-amber-800";
-			//             if (req.status === 'Diproses') badge = "bg-blue-100 text-blue-800";
-			//             if (req.status === 'Selesai') badge = "bg-green-100 text-green-800";
-			//             if (req.status === 'Ditolak') badge = "bg-red-100 text-red-800";
-			
-			//             // Logika Tombol Aksi
-			//             let tombolAksi = '<span class="text-gray-400">-</span>';
-			
-			//             if (isAdminOrOperator) {
-			//                 if (req.status === 'Pending') {
-			//                     tombolAksi = `
-			//                         <button onclick="setujuiPermintaanOlehAdmin(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold mr-1">Approve</button>
-			//                         <button onclick="tolakPermintaanOlehAdmin(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-semibold">Tolak</button>
-			//                     `;
-			//                 }
-			//             } else if (userRole === 'pramu') {
-			//                 if (req.status === 'Diproses') {
-			//                     tombolAksi = `
-			//                         <button onclick="selesaikanPermintaanOlehPramu(${req.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">Selesai</button>
-			//                     `;
-			//                 }
-			//             }
-			
-			//             // Kondisional Render Kolom Aksi (Subbagian tidak dirender kolom aksinya)
-			//             const tdAksiHTML = userRole === 'subbagian' ? '' : `<td class="p-3 text-center">${tombolAksi}</td>`;
-			
-			//             tbody.innerHTML += `
-			//                 <tr class="hover:bg-gray-50 border-b text-sm">
-			//                     <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
-			//                     <td class="p-3">
-			//                         <div class="font-semibold text-gray-800">${namaSubbagianTeks}</div>
-			//                         <div class="text-xs font-normal text-amber-600 mt-0.5">📍 ${namaRuanganTeks}</div>
-			//                     </td>
-			//                     <td class="p-3 space-y-0.5">${barangListHTML}</td>
-			//                     <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badge}">${req.status}</span></td>
-			//                     ${tdAksiHTML}
-			//                 </tr>
-			//             `;
-			//         });
+			//         // Render data ke tabel...
+			//         renderCartTable(data); 
 			
 			//     } catch (err) {
-			//         console.error("Gagal memuat data riwayat:", err.message);
+			//         console.error("Error memuat data:", err);
 			//     }
 			// }
+			async function loadPermintaanData() {
+			    try {
+			        if (!currentUser) return;
+			
+			        const userRole = (currentUser.role || '').toLowerCase();
+			        // PERBAIKAN: Deteksi jika role bernilai 'admin' ATAU 'operator'
+			        const isAdminOrOperator = userRole === 'admin' || userRole === 'operator';
+			        
+			        const tbody = document.getElementById('table-permintaan-body');
+			        const thAksi = document.getElementById('th-aksi'); // Pastikan tag <th>Aksi</th> memiliki id="th-aksi"
+			        
+			        if (!tbody) return;
+			        tbody.innerHTML = '';
+			
+			        // Atur visibilitas header KOLOM AKSI
+			        if (thAksi) {
+			            if (userRole === 'subbagian') {
+			                thAksi.classList.add('hidden'); // Sembunyikan kolom aksi jika dia subbagian
+			            } else {
+			                thAksi.classList.remove('hidden');
+			            }
+			        }
+			
+			        let mainData = [];
+			
+			        // ==========================================
+			        // LOGIKA FILTER QUERY BERDASARKAN ROLE
+			        // ==========================================
+			        
+			        if (isAdminOrOperator) {
+			            // 1. ADMIN / OPERATOR: Dapat melihat seluruh data permintaan tanpa filter apa pun
+			            let { data, error } = await _supabase
+			                .from('permintaan')
+			                .select(`
+			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			                    ruangan:ruangan_tujuan ( nama_ruangan ),
+			                    subbagian_rel:subbagian ( nama_subbagian ),
+			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			                `)
+			                .order('created_at', { ascending: false });
+			                
+			            if (error) throw error;
+			            mainData = data;
+			
+			        } else if (userRole === 'pramu') {
+			            // 2. PRAMU: Filter berdasarkan ruangan tugas pramu
+			            const { data: userRooms, error: roomError } = await _supabase
+			                .from('user_ruangan')
+			                .select('ruangan_id')
+			                .eq('user_id', currentUser.id);
+			
+			            if (roomError) throw roomError;
+			            const assignedRoomIds = userRooms.map(r => parseInt(r.ruangan_id));
+			
+			            if (assignedRoomIds.length > 0) {
+			                let { data, error } = await _supabase
+			                    .from('permintaan')
+			                    .select(`
+			                        id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			                        ruangan:ruangan_tujuan ( nama_ruangan ),
+			                        subbagian_rel:subbagian ( nama_subbagian ),
+			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			                    `)
+			                    .in('status', ['Diproses', 'Selesai'])
+			                    .in('ruangan_tujuan', assignedRoomIds)
+			                    .order('created_at', { ascending: false });
+			
+			                if (error) {
+								console.error("Error Query:", error);
+								throw error;
+							}
+			                mainData = data;
+			            } else {
+			                mainData = [];
+			            }
+			
+			        } else if (userRole === 'subbagian') {
+			            // 3. SUBBAGIAN: Menggunakan 'subbagian' (ID kelompok subbagian) agar semua permintaan 
+			            // dari subbagian yang sama (misal: Umum dan Logistik) bisa saling terlihat.
+			            let { data, error } = await _supabase
+			                .from('permintaan')
+			                .select(`
+			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
+			                    ruangan:ruangan_tujuan ( nama_ruangan ),
+			                    subbagian_rel:subbagian ( nama_subbagian ),
+			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
+			                `)
+			                .eq('subbagian', currentUser.subbagian_id) // PERBAIKAN FILTER DISINI
+			                .order('created_at', { ascending: false });
+			
+			            if (error) throw error;
+			            mainData = data;
+			        }
+			
+			        // ==========================================
+			        // RENDERING DATA KE TABEL HTML
+			        // ==========================================
+			        mainData.forEach(req => {
+			            const tgl = new Date(req.created_at).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
+			            
+			            const namaRuanganTeks = req.ruangan ? (req.ruangan.nama_ruangan || 'Tanpa Nama') : `ID #${req.ruangan_tujuan}`;
+			            const namaSubbagianTeks = req.subbagian_rel ? (req.subbagian_rel.nama_subbagian || 'Tanpa Subbagian') : 'Umum';
+			
+			            const detailList = req.permintaan_detail || [];
+			            const barangListHTML = detailList.map(d => `
+			                <div class="text-xs text-gray-700 font-medium">
+			                    • ${d.barang?.nama_barang || 'Barang Dihapus'} 
+			                    <span class="text-blue-600 font-bold">(${d.jumlah} ${d.barang?.satuan || ''})</span>
+			                </div>
+			            `).join('');
+			
+			            // Atur Badge Status
+			            let badge = "bg-gray-100 text-gray-800";
+			            if (req.status === 'Pending') badge = "bg-amber-100 text-amber-800";
+			            if (req.status === 'Diproses') badge = "bg-blue-100 text-blue-800";
+			            if (req.status === 'Selesai') badge = "bg-green-100 text-green-800";
+			            if (req.status === 'Ditolak') badge = "bg-red-100 text-red-800";
+			
+			            // Logika Tombol Aksi
+			            let tombolAksi = '<span class="text-gray-400">-</span>';
+			
+			            if (isAdminOrOperator) {
+			                if (req.status === 'Pending') {
+			                    tombolAksi = `
+			                        <button onclick="setujuiPermintaanOlehAdmin(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold mr-1">Approve</button>
+			                        <button onclick="tolakPermintaanOlehAdmin(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-semibold">Tolak</button>
+			                    `;
+			                }
+			            } else if (userRole === 'pramu') {
+			                if (req.status === 'Diproses') {
+			                    tombolAksi = `
+			                        <button onclick="selesaikanPermintaanOlehPramu(${req.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">Selesai</button>
+			                    `;
+			                }
+			            }
+			
+			            // Kondisional Render Kolom Aksi (Subbagian tidak dirender kolom aksinya)
+			            const tdAksiHTML = userRole === 'subbagian' ? '' : `<td class="p-3 text-center">${tombolAksi}</td>`;
+			
+			            tbody.innerHTML += `
+			                <tr class="hover:bg-gray-50 border-b text-sm">
+			                    <td class="p-3 text-xs text-gray-500">ID #${req.id}<br>${tgl}</td>
+			                    <td class="p-3">
+			                        <div class="font-semibold text-gray-800">${namaSubbagianTeks}</div>
+			                        <div class="text-xs font-normal text-amber-600 mt-0.5">📍 ${namaRuanganTeks}</div>
+			                    </td>
+			                    <td class="p-3 space-y-0.5">${barangListHTML}</td>
+			                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${badge}">${req.status}</span></td>
+			                    ${tdAksiHTML}
+			                </tr>
+			            `;
+			        });
+			
+			    } catch (err) {
+			        console.error("Gagal memuat data riwayat:", err.message);
+			    }
+			}
 
 			// 1. FUNGSI APPROVE UNTUK ADMIN / OPERATOR
 			async function setujuiPermintaanOlehAdmin(id) {
