@@ -279,36 +279,57 @@
 			}
 
 			// 3. FUNGSI MENARIK DETAIL RELASI USER (SUBBAGIAN & RUANGAN TUGAS)
-			async function AmbilDataProfileUser(userId) {
+			let currentUser = null; 
+
+			async function AmbilDataProfileUser() {
 			    try {
-			        const { data, error } = await _supabase
-			            .from('users')
-			            .select(`
-			                id, 
-			                role, 
-			                nama_lengkap,
-			                subbagian ( nama_subbagian ),
-			                user_ruangan ( 
-			                    ruangan ( nama_ruangan ) 
-			                )
-			            `)
-			            .eq('id', userId)
-			            .single();
+			        // 1. Ambil user ID yang sedang aktif dari Auth Supabase
+			        const { data: { user }, error: authError } = await _supabase.auth.getUser();
+			        
+			        if (authError) throw authError;
 			
-			        if (error) throw error;
+			        if (!user) {
+			            console.warn("Tidak ada pengguna yang login. Mengalihkan ke halaman login...");
+			            window.location.href = "login.html"; // Sesuaikan dengan nama halaman login Anda
+			            return;
+			        }
 			
-			        currentUser = {
-			            id: data.id,
-			            role: data.role, 
-			            nama_lengkap: data.nama_lengkap,
-			            subbagian: data.subbagian ? data.subbagian.nama_subbagian : 'Umum & Logistik',
-			            ruangan_tugas: data.user_ruangan ? data.user_ruangan.map(ur => ur.ruangan?.nama_ruangan) : []
-			        };
-			        console.log("Data user & relasi berhasil dimuat:", currentUser);
+			        // 2. Ambil data detail (Role, Subbagian, dll) dari tabel profil Anda
+			        // ⚠️ PERHATIKAN: Ganti 'users' dengan nama tabel profile Anda jika berbeda (misal: 'profiles')
+			        const { data: profileData, error: profileError } = await _supabase
+			            .from('users') 
+			            .select('id, username, role, subbagian_id') // ⚠️ Pastikan nama kolom sesuai di database
+			            .eq('id', user.id)
+			            .single(); // .single() digunakan karena kita hanya mengambil 1 data user
+			
+			        if (profileError) throw profileError;
+			
+			        // 3. Simpan data ke variabel global agar bisa diakses oleh fungsi loadPermintaanData()
+			        currentUser = profileData;
+			        console.log("User berhasil dimuat:", currentUser);
+			
+			        // 4. [Opsional] Update Tampilan Nama & Role di Header/Sidebar Dashboard
+			        const namaUserEl = document.getElementById('user-name'); // Sesuaikan ID elemen HTML Anda
+			        const roleUserEl = document.getElementById('user-role'); // Sesuaikan ID elemen HTML Anda
+			        
+			        if (namaUserEl) namaUserEl.innerText = currentUser.username || user.email;
+			        if (roleUserEl) roleUserEl.innerText = (currentUser.role || '').toUpperCase();
+			
+			        // 5. PENTING: Jalankan pemuatan data tabel SETELAH profile user berhasil didapatkan
+			        if (typeof loadPermintaanData === 'function') {
+			            loadPermintaanData();
+			        }
+			
 			    } catch (err) {
-			        console.error("Gagal memuat profil berelasi:", err.message);
+			        console.error("Error pada AmbilDataProfileUser:", err.message);
+			        alert("Gagal memuat profil pengguna: " + err.message);
 			    }
 			}
+			
+			// Jalankan fungsi ini saat halaman selesai dimuat (DOM Ready)
+			document.addEventListener('DOMContentLoaded', () => {
+			    AmbilDataProfileUser();
+			});
 			
 			// 4. HAK AKSES MENU SIDEBAR (ROLE-BASED ACCESS CONTROL)
 			function applyRolePermissions(role) {
