@@ -681,7 +681,7 @@
 			            if (isAdminOrOperator) {
 			                if (req.status === 'Pending') {
 			                    tombolAksi = `
-			                        <button onclick="setujuiPermintaanOlehAdmin(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold mr-1">Approve</button>
+			                        <button onclick="setujuiPermintaanOlehAdmin(${req.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold mr-1">Setujui</button>
 			                        <button onclick="tolakPermintaanOlehAdmin(${req.id})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs font-semibold">Tolak</button>
 			                    `;
 			                }
@@ -714,9 +714,33 @@
 			        console.error("Gagal memuat data riwayat:", err.message);
 			    }
 			}
+
+			// 1. FUNGSI APPROVE UNTUK ADMIN / OPERATOR
+			async function setujuiPermintaanOlehAdmin(id) {
+			    if (!confirm("Setujui permintaan ini untuk diproses oleh Pramu?")) return;
+			    
+			    try {
+			        // Menggunakan _supabase dengan garis bawah sesuai inisialisasi script Anda
+			        // Status diubah menjadi 'diproses' agar Pramu bisa melihatnya
+			        const { error } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'diproses' }) 
+			            .eq('id', id);
 			
+			        if (error) throw error;
+			
+			        alert("Permintaan berhasil disetujui!");
+			        loadPermintaanData(); // Memanggil ulang fungsi untuk refresh tabel otomatis
+			    } catch (err) {
+			        console.error("Gagal menyetujui permintaan:", err.message);
+			        alert("Gagal menyetujui: " + err.message);
+			    }
+			}
+			
+			// 2. FUNGSI TOLAK UNTUK ADMIN / OPERATOR
 			async function tolakPermintaanOlehAdmin(id) {
 			    if (!confirm("Apakah Anda yakin ingin menolak permintaan ini?")) return;
+			    
 			    try {
 			        const { error } = await _supabase
 			            .from('permintaan')
@@ -724,12 +748,30 @@
 			            .eq('id', id);
 			
 			        if (error) throw error;
-			        alert("Permintaan ditolak.");
-			        loadPermintaanData();
-			    } catch (err) {
+			
+			        alert("Permintaan telah ditolak.");
+			        loadPermintaanData(); // Memanggil ulang fungsi untuk refresh tabel otomatis
+			    } catch (err {
+			        console.error("Gagal menolak permintaan:", err.message);
 			        alert("Gagal menolak: " + err.message);
 			    }
 			}
+			
+			// async function tolakPermintaanOlehAdmin(id) {
+			//     if (!confirm("Apakah Anda yakin ingin menolak permintaan ini?")) return;
+			//     try {
+			//         const { error } = await _supabase
+			//             .from('permintaan')
+			//             .update({ status: 'Ditolak' })
+			//             .eq('id', id);
+			
+			//         if (error) throw error;
+			//         alert("Permintaan ditolak.");
+			//         loadPermintaanData();
+			//     } catch (err) {
+			//         alert("Gagal menolak: " + err.message);
+			//     }
+			// }
 			
 			
 			// --- AKSI UNTUK ROLE PRAMU (UPDATE STOK BARANG) ---
@@ -790,78 +832,78 @@
 			    }
 			}
 			
-			// 12. PROSES UPDATE POTONG STOK OTOMATIS SAAT APPROVE
-			async function approveTransaksi(permintaanId) {
-			    const konfirmasi = confirm("Apakah Anda yakin ingin menyetujui permintaan ini? Stok barang akan otomatis dikurangi.");
-			    if (!konfirmasi) return;
+			// // 12. PROSES UPDATE POTONG STOK OTOMATIS SAAT APPROVE
+			// async function approveTransaksi(permintaanId) {
+			//     const konfirmasi = confirm("Apakah Anda yakin ingin menyetujui permintaan ini? Stok barang akan otomatis dikurangi.");
+			//     if (!konfirmasi) return;
 			
-			    try {
-			        const { data: detailBarang, error: errDetail } = await _supabase
-			            .from('permintaan_detail')
-			            .select('barang_id, jumlah')
-			            .eq('permintaan_id', permintaanId);
+			//     try {
+			//         const { data: detailBarang, error: errDetail } = await _supabase
+			//             .from('permintaan_detail')
+			//             .select('barang_id, jumlah')
+			//             .eq('permintaan_id', permintaanId);
 			
-			        if (errDetail) throw errDetail;
+			//         if (errDetail) throw errDetail;
 			
-			        for (const item of detailBarang) {
-			            const { data: barangData, error: errGetBarang } = await _supabase
-			                .from('barang')
-			                .select('stok_sekarang, nama_barang')
-			                .eq('id', item.barang_id)
-			                .single();
+			//         for (const item of detailBarang) {
+			//             const { data: barangData, error: errGetBarang } = await _supabase
+			//                 .from('barang')
+			//                 .select('stok_sekarang, nama_barang')
+			//                 .eq('id', item.barang_id)
+			//                 .single();
 			
-			            if (errGetBarang) throw errGetBarang;
+			//             if (errGetBarang) throw errGetBarang;
 			
-			            if (barangData.stok_sekarang < item.jumlah) {
-			                alert(`Gagal Approve! Stok untuk [${barangData.nama_barang}] tidak mencukupi. Sisa stok: ${barangData.stok_sekarang}`);
-			                return; 
-			            }
+			//             if (barangData.stok_sekarang < item.jumlah) {
+			//                 alert(`Gagal Approve! Stok untuk [${barangData.nama_barang}] tidak mencukupi. Sisa stok: ${barangData.stok_sekarang}`);
+			//                 return; 
+			//             }
 			
-			            const stokBaru = barangData.stok_sekarang - item.jumlah;
-			            const { error: errUpdateStok } = await _supabase
-			                .from('barang')
-			                .update({ stok_sekarang: stokBaru })
-			                .eq('id', item.barang_id);
+			//             const stokBaru = barangData.stok_sekarang - item.jumlah;
+			//             const { error: errUpdateStok } = await _supabase
+			//                 .from('barang')
+			//                 .update({ stok_sekarang: stokBaru })
+			//                 .eq('id', item.barang_id);
 			
-			            if (errUpdateStok) throw errUpdateStok;
-			        }
+			//             if (errUpdateStok) throw errUpdateStok;
+			//         }
 			
-			        const { error: errHeader } = await _supabase
-			            .from('permintaan')
-			            .update({ status: 'Disetujui' })
-			            .eq('id', permintaanId);
+			//         const { error: errHeader } = await _supabase
+			//             .from('permintaan')
+			//             .update({ status: 'Disetujui' })
+			//             .eq('id', permintaanId);
 			
-			        if (errHeader) throw errHeader;
+			//         if (errHeader) throw errHeader;
 			
-			        alert('Permintaan disetujui! Tugas pengiriman telah diteruskan ke Pramubakti ruangan terkait.');
+			//         alert('Permintaan disetujui! Tugas pengiriman telah diteruskan ke Pramubakti ruangan terkait.');
 			        
-			        loadPermintaanData();
-			        loadDashboardData();
-			        populateBarangDropdown();
-			    } catch (err) {
-			        alert('Terjadi kesalahan saat memproses approval: ' + err.message);
-			    }
-			}
+			//         loadPermintaanData();
+			//         loadDashboardData();
+			//         populateBarangDropdown();
+			//     } catch (err) {
+			//         alert('Terjadi kesalahan saat memproses approval: ' + err.message);
+			//     }
+			// }
 			
-			// 13. AKSI TOMBOL SELESAI OLEH PRAMUBAKTI
-			async function selesaiKirim(permintaanId) {
-			    const konfirmasi = confirm("Konfirmasi bahwa barang telah sukses diantar ke ruangan tujuan?");
-			    if (!konfirmasi) return;
+			// // 13. AKSI TOMBOL SELESAI OLEH PRAMUBAKTI
+			// async function selesaiKirim(permintaanId) {
+			//     const konfirmasi = confirm("Konfirmasi bahwa barang telah sukses diantar ke ruangan tujuan?");
+			//     if (!konfirmasi) return;
 			
-			    try {
-			        const { error } = await _supabase
-			            .from('permintaan')
-			            .update({ status: 'Selesai' })
-			            .eq('id', permintaanId);
+			//     try {
+			//         const { error } = await _supabase
+			//             .from('permintaan')
+			//             .update({ status: 'Selesai' })
+			//             .eq('id', permintaanId);
 			
-			        if (error) throw error;
+			//         if (error) throw error;
 			
-			        alert('Status diperbarui: Barang telah diterima di ruangan tujuan. Selesai!');
-			        loadPermintaanData(); 
-			    } catch (err) {
-			        alert('Gagal memperbarui status pengiriman: ' + err.message);
-			    }
-			}
+			//         alert('Status diperbarui: Barang telah diterima di ruangan tujuan. Selesai!');
+			//         loadPermintaanData(); 
+			//     } catch (err) {
+			//         alert('Gagal memperbarui status pengiriman: ' + err.message);
+			//     }
+			// }
 			
 			// 14. PENDUKUNG WHATSAPP NOTIFIKASI & LOGOUT
 			function generateWhatsAppLink(namaPemohon, subbagian, itemsText, noWaPramubakti) {
