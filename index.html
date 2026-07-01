@@ -825,7 +825,7 @@
 			                        ruangan:ruangan!ruangan_tujuan ( nama_ruangan ),
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
-			                    // .in('status', ['Diproses', 'Selesai'])
+			                    .in('status', ['Diproses', 'Selesai'])
 			                    .in('ruangan_tujuan', assignedRoomIds)
 			                    .order('created_at', { ascending: false });
 			
