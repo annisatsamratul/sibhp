@@ -55,14 +55,13 @@
 						<nav class="space-y-1">
 							<button onclick="switchTab('dashboard')" id="menu-dashboard" class="wfull text-left p-2.5 rounded hover:bg-slate-700 block transition">📊 Dashboard Real-time </button>
 							<button onclick="switchTab('permintaan')" id="menu-permintaan"
-							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition">📦 Permintaan
-							Barang</button>
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition">📦 Permintaan Barang</button>
 							<button onclick="switchTab('barang-masuk')" id="menu-barang-masuk"
-							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📥 Barang
-							Masuk</button>
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📥 Barang Masuk</button>
 							<button onclick="switchTab('stock-opname')" id="menu-stock-opname"
-							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📝 Stock
-							Opname</button>
+							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📝 Stock Opname</button>
+							<button onclick="tampilkanHalaman('halaman-laporan')" id="menu-laporan-barang"
+					        class="block w-full text-left p-3 hover:bg-blue-800 rounded">📊 Laporan Barang</button>
 							<button onclick="switchTab('master-barang')" id="menu-master-barang"
 							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">⚙️ Master
 							Data BHP</button>
@@ -202,6 +201,24 @@
 					            <p class="text-gray-500">Konten Manajemen Barang Masuk Sedang Dalam Pengembangan...</p>
 					        </div>
 					    </section>
+
+						<div id="halaman-laporan" class="hidden p-6">
+						    <h2 class="text-xl font-bold mb-4">Laporan Rekap Barang Keluar & Masuk</h2>
+						    <div class="overflow-x-auto bg-white rounded shadow">
+						        <table class="w-full text-left border-collapse">
+						            <thead class="bg-gray-100">
+						                <tr>
+						                    <th class="p-3 border">Nama Barang</th>
+						                    <th class="p-3 border">Total Masuk</th>
+						                    <th class="p-3 border">Total Keluar</th>
+						                    <th class="p-3 border">Stok Akhir</th>
+						                </tr>
+						            </thead>
+						            <tbody id="table-laporan-body">
+						                </tbody>
+						        </table>
+						    </div>
+						</div>
 
 						<!-- VIEW: STOCK OPNAME -->
 					    <section id="tab-stock-opname" class="tab-content hidden">
