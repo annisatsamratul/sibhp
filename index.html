@@ -761,8 +761,12 @@
 			//     }
 			// }
 			async function loadPermintaanData() {
-			    try {
-			        if (!currentUser) return;
+			    console.log("Fungsi loadPermintaanData dipanggil!");
+				try {
+			        if (!currentUser) {
+						console.log("currentUser tidak ditemukan, fungsi berhenti.");
+						return;
+					}
 			
 			        const userRole = (currentUser.role || '').toLowerCase();
 			        // PERBAIKAN: Deteksi jika role bernilai 'admin' ATAU 'operator'
