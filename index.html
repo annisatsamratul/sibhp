@@ -304,9 +304,9 @@
 						subbagian: data.subbagian_id ? data.subbagian.nama_subbagian : "",
 						ruangan_tugas: data.user_ruangan ? data.user_ruangan.map(ur => ur.ruangan?.nama_ruangan) : []
 					};
-					console.log("Data user & relasi berhasil dimuat:", currentUser):
+					console.log("Data user & relasi berhasil dimuat:", currentUser);
 				} catch (err){
-					console.error("Gagal memuat profil berelasi:", err.message):
+					console.error("Gagal memuat profil berelasi:", err.message);
 				}
 			}
 						
