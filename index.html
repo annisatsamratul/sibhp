@@ -741,7 +741,7 @@
 			                .from('permintaan')
 			                .select(`
 			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                    ruangan:ruangan_tujuan ( nama_ruangan ),
+			                    ruangan ( nama_ruangan ),
 			                    subbagian_rel:subbagian ( nama_subbagian ),
 			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                `)
@@ -758,14 +758,14 @@
 			                .eq('user_id', currentUser.id);
 			
 			            if (roomError) throw roomError;
-			            const assignedRoomIds = userRooms.map(r => String(r.ruangan_id));
+			            const assignedRoomIds = userRooms.map(r => Number(r.ruangan_id));
 			
 			            if (assignedRoomIds.length > 0) {
 			                let { data, error } = await _supabase
 			                    .from('permintaan')
 			                    .select(`
 			                        id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                        ruangan:ruangan_tujuan ( nama_ruangan ),
+			                        ruangan ( nama_ruangan ),
 			                        subbagian_rel:subbagian ( nama_subbagian ),
 			                        permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                    `)
@@ -786,7 +786,7 @@
 			                .from('permintaan')
 			                .select(`
 			                    id, created_at, status, ruangan_tujuan, user_id, subbagian,
-			                    ruangan:ruangan_tujuan ( nama_ruangan ),
+			                    ruangan ( nama_ruangan ),
 			                    subbagian_rel:subbagian ( nama_subbagian ),
 			                    permintaan_detail ( jumlah, barang ( nama_barang, satuan ) )
 			                `)
