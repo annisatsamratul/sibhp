@@ -984,58 +984,90 @@
 			
 			// --- AKSI UNTUK ROLE PRAMU (UPDATE STOK BARANG) ---
 			async function selesaikanPermintaanOlehPramu(id) {
-		    if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
-		    
-		    try {
-		        const { data: details, error: fetchError } = await _supabase
-		            .from('permintaan_detail')
-		            .select('barang_id, jumlah')
-		            .eq('permintaan_id', id);
-		
-		        if (fetchError) throw fetchError;
-		
-		        for (const item of details) {
-		            // 🌟 PERBAIKAN: select('stok_sekarang') bukan 'stok'
-		            const { data: barangItem, error: barangError } = await _supabase
-		                .from('barang')
-		                .select('stok_sekarang')
-		                .eq('id', item.barang_id)
-		                .single();
-		
-		            if (barangError) throw barangError;
-		
-		            // 🌟 PERBAIKAN: membaca barangItem.stok_sekarang
-		            const stokAktual = barangItem.stok_sekarang || 0;
-		            const stokBaru = stokAktual - item.jumlah;
-		
-		            if (stokBaru < 0) {
-		                alert(`⚠️ Perhatian: Stok salah satu barang tidak mencukupi (Stok saat ini: ${stokAktual}). Pemotongan tetap dilanjutkan.`);
-		            }
-		
-		            // 🌟 PERBAIKAN: update kolom stok_sekarang
-		            const { error: updateStokError } = await _supabase
-		                .from('barang')
-		                .update({ stok_sekarang: stokBaru })
-		                .eq('id', item.barang_id);
-		
-		            if (updateStokError) throw updateStokError;
-		        }
-		
-		        const { error: updateStatusError } = await _supabase
-		            .from('permintaan')
-		            .update({ status: 'Selesai' })
-		            .eq('id', id);
-		
-		        if (updateStatusError) throw updateStatusError;
-		
-		        alert("Permintaan berhasil diselesaikan dan stok barang telah diperbarui!");
-		        loadPermintaanData(); 
-		
-		    } catch (err) {
-		        console.error(err);
-		        alert("Gagal menyelesaikan permintaan: " + err.message);
-		    }
-		}
+			    if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
+			    
+			    try {
+			        const { data: details, error: fetchError } = await _supabase
+			            .from('permintaan_detail')
+			            .select('barang_id, jumlah')
+			            .eq('permintaan_id', id);
+			
+			        if (fetchError) throw fetchError;
+			
+			        for (const item of details) {
+			            // 🌟 PERBAIKAN: select('stok_sekarang') bukan 'stok'
+			            const { data: barangItem, error: barangError } = await _supabase
+			                .from('barang')
+			                .select('stok_sekarang')
+			                .eq('id', item.barang_id)
+			                .single();
+			
+			            if (barangError) throw barangError;
+			
+			            // 🌟 PERBAIKAN: membaca barangItem.stok_sekarang
+			            const stokAktual = barangItem.stok_sekarang || 0;
+			            const stokBaru = stokAktual - item.jumlah;
+			
+			            if (stokBaru < 0) {
+			                alert(`⚠️ Perhatian: Stok salah satu barang tidak mencukupi (Stok saat ini: ${stokAktual}). Pemotongan tetap dilanjutkan.`);
+			            }
+			
+			            // 🌟 PERBAIKAN: update kolom stok_sekarang
+			            const { error: updateStokError } = await _supabase
+			                .from('barang')
+			                .update({ stok_sekarang: stokBaru })
+			                .eq('id', item.barang_id);
+			
+			            if (updateStokError) throw updateStokError;
+			        }
+			
+			        const { error: updateStatusError } = await _supabase
+			            .from('permintaan')
+			            .update({ status: 'Selesai' })
+			            .eq('id', id);
+			
+			        if (updateStatusError) throw updateStatusError;
+			
+			        alert("Permintaan berhasil diselesaikan dan stok barang telah diperbarui!");
+			        loadPermintaanData(); 
+			
+			    } catch (err) {
+			        console.error(err);
+			        alert("Gagal menyelesaikan permintaan: " + err.message);
+			    }
+			}
+
+			async function loadRekapBarang() {
+			    // 1. Ambil semua barang
+			    const { data: barangList } = await _supabase.from('barang').select('id, nama_barang, stok_awal');
+			
+			    // 2. Ambil data Barang Masuk (group by barang_id)
+			    const { data: dataMasuk } = await _supabase
+			        .from('detail_barang_masuk')
+			        .select('barang_id, jumlah');
+			
+			    // 3. Ambil data Barang Keluar (hanya yang status permintaan Selesai)
+			    const { data: dataKeluar } = await _supabase
+			        .from('permintaan_detail')
+			        .select('barang_id, jumlah, permintaan!inner(status)')
+			        .eq('permintaan.status', 'Selesai');
+			
+			    // 4. Proses Kalkulasi
+			    const rekap = barangList.map(b => {
+			        const masuk = dataMasuk.filter(m => m.barang_id === b.id).reduce((sum, curr) => sum + curr.jumlah, 0);
+			        const keluar = dataKeluar.filter(k => k.barang_id === b.id).reduce((sum, curr) => sum + curr.jumlah, 0);
+			        
+			        return {
+			            ...b,
+			            total_masuk: masuk,
+			            total_keluar: keluar,
+			            stok_akhir: b.stok_awal + masuk - keluar
+			        };
+			    });
+			
+			    console.table(rekap); // Tampilkan di console untuk verifikasi
+			    renderRekapTable(rekap); // Fungsi untuk menampilkan ke HTML
+			}
 			// async function selesaikanPermintaanOlehPramu(id) {
 			//     if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
 			    
