@@ -1055,35 +1055,34 @@
 			}
 
 			async function loadRekapBarang() {
-			    // 1. Ambil semua barang
-			    const { data: barangList } = await _supabase.from('barang').select('id, nama_barang, stok_awal');
+			    const tbody = document.getElementById('table-laporan-body');
+				tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center">Memuat data...</td></tr>';
 			
-			    // 2. Ambil data Barang Masuk (group by barang_id)
-			    const { data: dataMasuk } = await _supabase
-			        .from('detail_barang_masuk')
-			        .select('barang_id, jumlah');
+				// 1. Ambil data gabungan dari view yang sudah dibuat sebelumnya
+				const { data, error } = await _supabase.from('view_rekap_barang').select('*');
+				
+				if (error) {
+					console.error("Gagal memuat rekap:", error);
+					return;
+				}
 			
-			    // 3. Ambil data Barang Keluar (hanya yang status permintaan Selesai)
-			    const { data: dataKeluar } = await _supabase
-			        .from('permintaan_detail')
-			        .select('barang_id, jumlah, permintaan!inner(status)')
-			        .eq('permintaan.status', 'Selesai');
-			
-			    // 4. Proses Kalkulasi
-			    const rekap = barangList.map(b => {
-			        const masuk = dataMasuk.filter(m => m.barang_id === b.id).reduce((sum, curr) => sum + curr.jumlah, 0);
-			        const keluar = dataKeluar.filter(k => k.barang_id === b.id).reduce((sum, curr) => sum + curr.jumlah, 0);
-			        
-			        return {
-			            ...b,
-			            total_masuk: masuk,
-			            total_keluar: keluar,
-			            stok_akhir: b.stok_awal + masuk - keluar
-			        };
-			    });
-			
-			    console.table(rekap); // Tampilkan di console untuk verifikasi
-			    renderRekapTable(rekap); // Fungsi untuk menampilkan ke HTML
+				// 2. Render ke tabel
+				tbody.innerHTML = data.map(item => `
+					<tr class="border-b">
+						<td class="p-3">${item.nama_barang}</td>
+						<td class="p-3 text-emerald-600 font-bold">${item.total_masuk}</td>
+						<td class="p-3 text-rose-600 font-bold">${item.total_keluar}</td>
+						<td class="p-3 font-bold">${item.total_masuk - item.total_keluar}</td>
+					</tr>
+				`).join('');
+			}
+
+			// Tambahkan fungsi untuk pindah halaman
+			function tampilkanHalaman(id) {
+			    document.querySelectorAll('#app > div[id^="halaman-"]').forEach(div => div.classList.add('hidden'));
+			    document.getElementById(id).classList.remove('hidden');
+			    
+			    if (id === 'halaman-laporan') loadRekapBarang();
 			}
 			// async function selesaikanPermintaanOlehPramu(id) {
 			//     if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
