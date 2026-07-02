@@ -481,6 +481,7 @@
 				document.getElementById('menu-stock-opname').classList.add('hidden');
 				document.getElementById('menu-master-barang').classList.add('hidden');
 				document.getElementById('menu-sysadmin').classList.add('hidden');
+				document.getElementById('menu-laporan-barang').classList.add('hidden');
 				
 				// Normalisasi pengecekan jika di DB tertulis 'pramu' atau 'pramubakti'
 				if (role === 'operator' || role === 'admin') {
@@ -488,10 +489,12 @@
 					document.getElementById('menu-stock-opname').classList.remove('hidden');
 					document.getElementById('menu-master-barang').classList.remove('hidden');
 					document.getElementById('menu-sysadmin').classList.remove('hidden');
+					document.getElementById('menu-laporan-barang').classList.remove('hidden');
 				} else if (role === 'pramubakti' || role === 'pramu') {
 					document.getElementById('menu-barang-masuk').classList.remove('hidden');
 					document.getElementById('menu-stock-opname').classList.remove('hidden');
 					document.getElementById('menu-master-barang').classList.remove('hidden');
+					document.getElementById('menu-laporan-barang').classList.remove('hidden');
 				}
 			}
 			
