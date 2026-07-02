@@ -198,10 +198,48 @@
 						<section id="tab-barang-masuk" class="tab-content hidden">
 					        <h2 class="text-xl font-bold mb-4 text-blue-900">Form Input Barang Masuk</h2>
 					        <div class="bg-white p-6 rounded shadow">
-					            <p class="text-gray-500">Konten Manajemen Barang Masuk Sedang Dalam Pengembangan...</p>
+					            <div id="halaman-barang-masuk" class="hidden p-6">
+								    <h2 class="text-xl font-bold mb-4">Input Barang Masuk</h2>
+								    <form id="form-barang-masuk" class="bg-white p-6 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-4">
+								        <div>
+								            <label class="block text-sm font-medium">No. Nota Dinas</label>
+								            <input type="text" id="no_nota" class="w-full border p-2 rounded" required>
+								        </div>
+								        <div>
+								            <label class="block text-sm font-medium">Sumber Barang</label>
+								            <input type="text" id="sumber_barang" class="w-full border p-2 rounded" required>
+								        </div>
+								        <div>
+								            <label class="block text-sm font-medium">Pilih Barang</label>
+								            <select id="select-barang" class="w-full border p-2 rounded" required></select>
+								        </div>
+								        <div>
+								            <label class="block text-sm font-medium">Jumlah Masuk</label>
+								            <input type="number" id="jumlah_masuk" class="w-full border p-2 rounded" min="1" required>
+								        </div>
+								        <button type="submit" class="md:col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Simpan Barang Masuk</button>
+								    </form>
+								</div>
 					        </div>
 					    </section>
 
+						<!-- VIEW: STOCK OPNAME -->
+					    <section id="tab-stock-opname" class="tab-content hidden">
+					        <h2 class="text-xl font-bold mb-4 text-blue-900">Stock Opname & Penyesuaian</h2>
+					        <div class="bg-white p-6 rounded shadow">
+					            <p class="text-gray-500">Konten Fitur Stock Opname Sedang Dalam Pengembangan...</p>
+					        </div>
+					    </section>
+
+						<!-- VIEW: MASTER BARANG -->
+					    <section id="tab-master-barang" class="tab-content hidden">
+					        <h2 class="text-xl font-bold mb-4 text-blue-900">Master Data Barang Habis Pakai</h2>
+					        <div class="bg-white p-6 rounded shadow">
+					            <p class="text-gray-500">Konten Master Data Barang Sedang Dalam Pengembangan...</p>
+					        </div>
+					    </section>
+						
+						<!-- VIEW: LAPORAN REKAP -->
 						<section id="tab-halaman-laporan" class="tab-content hidden">
 						    <h2 class="text-xl font-bold mb-4">Laporan Rekap Barang Keluar & Masuk</h2>
 						    <div class="overflow-x-auto bg-white rounded shadow">
@@ -219,22 +257,6 @@
 						        </table>
 						    </div>
 						</section>
-
-						<!-- VIEW: STOCK OPNAME -->
-					    <section id="tab-stock-opname" class="tab-content hidden">
-					        <h2 class="text-xl font-bold mb-4 text-blue-900">Stock Opname & Penyesuaian</h2>
-					        <div class="bg-white p-6 rounded shadow">
-					            <p class="text-gray-500">Konten Fitur Stock Opname Sedang Dalam Pengembangan...</p>
-					        </div>
-					    </section>
-
-						<!-- VIEW: MASTER BARANG -->
-					    <section id="tab-master-barang" class="tab-content hidden">
-					        <h2 class="text-xl font-bold mb-4 text-blue-900">Master Data Barang Habis Pakai</h2>
-					        <div class="bg-white p-6 rounded shadow">
-					            <p class="text-gray-500">Konten Master Data Barang Sedang Dalam Pengembangan...</p>
-					        </div>
-					    </section>
 
 						<!-- VIEW: MANAJEMEN AKUN -->
 					    <section id="tab-sysadmin" class="tab-content hidden">
@@ -1057,6 +1079,41 @@
 			        console.error(err);
 			        alert("Gagal menyelesaikan permintaan: " + err.message);
 			    }
+			}
+
+			async function simpanBarangMasuk(event) {
+			    event.preventDefault();
+			    
+			    // 1. Insert ke barang_masuk
+			    const { data: bm, error: errBm } = await _supabase
+			        .from('barang_masuk')
+			        .insert([{ 
+			            no_nota_dinas: document.getElementById('no_nota').value,
+			            sumber_barang: document.getElementById('sumber_barang').value,
+			            nama_petugas: currentUser.nama_lengkap 
+			        }])
+			        .select();
+			
+			    // 2. Insert ke detail_barang_masuk
+			    const jumlah = parseInt(document.getElementById('jumlah_masuk').value);
+			    const barangId = document.getElementById('select-barang').value;
+			
+			    await _supabase.from('detail_barang_masuk').insert([{
+			        barang_masuk_id: bm[0].id,
+			        barang_id: barangId,
+			        jumlah: jumlah,
+			        harga_satuan: 0 // Sesuaikan jika ada input harga
+			    }]);
+			
+			    // 3. Update stok di tabel barang
+			    const { data: barang } = await _supabase.from('barang').select('stok_sekarang').eq('id', barangId).single();
+			    await _supabase
+			        .from('barang')
+			        .update({ stok_sekarang: barang.stok_sekarang + jumlah })
+			        .eq('id', barangId);
+			
+			    alert('Barang berhasil masuk dan stok terupdate!');
+			    // Reset form...
 			}
 
 			async function loadRekapBarang() {
