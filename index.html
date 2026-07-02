@@ -60,7 +60,7 @@
 							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📥 Barang Masuk</button>
 							<button onclick="switchTab('stock-opname')" id="menu-stock-opname"
 							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">📝 Stock Opname</button>
-							<button onclick="tampilkanHalaman('halaman-laporan')" id="menu-laporan-barang"
+							<button onclick="switchTab('halaman-laporan')" id="menu-laporan-barang"
 					        class="block w-full text-left p-3 hover:bg-blue-800 rounded">📊 Laporan Barang</button>
 							<button onclick="switchTab('master-barang')" id="menu-master-barang"
 							class="w-full text-left p-2.5 rounded hover:bg-slate-700 block transition hidden">⚙️ Master
@@ -307,7 +307,6 @@
 			                loadDashboardData();
 			                populateBarangDropdown();
 			                populateRuanganDropdown();
-							loadRekapBarang();
 			            }
 			        });
 			    }
@@ -339,7 +338,6 @@
 			        loadDashboardData();
 			        populateBarangDropdown();
 			        populateRuanganDropdown();
-					loadRekapBarang();
 			    } else {
 			        alert('Kegagalan Autentikasi! Username atau Password Salah.');
 			    }
@@ -1080,12 +1078,12 @@
 			}
 
 			// Tambahkan fungsi untuk pindah halaman
-			function tampilkanHalaman(id) {
-			    document.querySelectorAll('#app > div[id^="halaman-"]').forEach(div => div.classList.add('hidden'));
-			    document.getElementById(id).classList.remove('hidden');
+			// function tampilkanHalaman(id) {
+			//     document.querySelectorAll('#app > div[id^="halaman-"]').forEach(div => div.classList.add('hidden'));
+			//     document.getElementById(id).classList.remove('hidden');
 			    
-			    if (id === 'tab-halaman-laporan') loadRekapBarang();
-			}
+			//     if (id === 'tab-halaman-laporan') loadRekapBarang();
+			// }
 			// async function selesaikanPermintaanOlehPramu(id) {
 			//     if (!confirm("Apakah barang sudah dikirim ke ruangan tujuan? Tindakan ini akan memotong stok barang.")) return;
 			    
